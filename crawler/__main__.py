@@ -16,7 +16,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
 from .chains import CHAINS
-from .downloader import download
+from .downloader import fetch
 from .selection import last_cutoff, select_latest
 
 log = logging.getLogger("crawler")
@@ -131,10 +131,10 @@ def main(argv=None):
         log.info("file list saved to %s", list_file)
         return 0
 
-    # 3. download into <out>/<cutoff>/<chain id>/
+    # 3. download into <out>/<cutoff>/<chain id>/ and extract each file into a folder named after it
     ok = errors = 0
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        futures = {pool.submit(download, remote, os.path.join(base_dir, info.chain_id)): remote
+        futures = {pool.submit(fetch, remote, os.path.join(base_dir, info.chain_id)): remote
                    for remote, info in selected}
         for future in as_completed(futures):
             remote = futures[future]

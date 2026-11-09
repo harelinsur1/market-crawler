@@ -1,4 +1,5 @@
 import logging
+import os
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Dict, List
@@ -59,8 +60,25 @@ class Platform:
     def list_price_full(self, day: date) -> List[RemoteFile]:
         raise NotImplementedError
 
-    def resolve_url(self, remote: RemoteFile) -> str:
-        return remote.url
+    def download(self, remote: RemoteFile, path: str) -> None:
+        """Download handler: save `remote` to `path`.
+
+        The default is a plain GET of the listed url, using this platform's session (so
+        login cookies are kept). Portals that need extra steps override this.
+        """
+        self.save(remote.url, path)
+
+    def save(self, url: str, path: str, **kwargs) -> None:
+        kwargs.setdefault("timeout", DEFAULT_TIMEOUT)
+        tmp_path = path + ".part"
+        with self.session.get(url, stream=True, **kwargs) as resp:
+            resp.raise_for_status()
+            if "text/html" in resp.headers.get("Content-Type", ""):
+                raise RuntimeError("got an HTML page instead of a file from %s" % resp.url)
+            with open(tmp_path, "wb") as fh:
+                for chunk in resp.iter_content(chunk_size=64 * 1024):
+                    fh.write(chunk)
+        os.replace(tmp_path, path)
 
     def get(self, url: str, **kwargs) -> requests.Response:
         kwargs.setdefault("timeout", DEFAULT_TIMEOUT)

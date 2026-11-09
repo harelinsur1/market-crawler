@@ -45,7 +45,9 @@ Options can be combined, e.g. `python -m crawler --chains "rami levy" --cutoff "
 
 Files are saved to `data\<yyyymmdd-HHMM>\<chain id>\<file name>`, for example
 `data\20261109-1100\7290058140886\PriceFull7290058140886-001-001-20261109-001001.gz`.
-Existing files are skipped, so it is safe to run again.
+Each file is then extracted into a folder with the same name (without `.gz`), e.g.
+`...\7290058140886\PriceFull7290058140886-001-001-20261109-001001\PriceFull7290058140886-001-001-20261109-001001.xml`.
+Existing files and folders are skipped, so it is safe to run again.
 
 The exit code is `0` on success and `1` if any chain or download failed. A failing portal
 (e.g. Shufersal timing out) is logged and does not stop the other chains.
@@ -87,12 +89,15 @@ Names used by `--chains` / `--list-chains` and in the `chain` column of the list
 
 ## Portals
 
-| platform    | site                              |
-|-------------|-----------------------------------|
-| Cerberus    | url.retail.publishedprices.co.il  |
-| Bina        | kingstore, maayan2000, zolvebegadol, superbareket, shuk-hayir, shefabirkathashem, goodpharm, ktshivuk, paz, citymarketkiryatgat, citymarketgivatayim `.binaprojects.com` |
-| Carrefour   | prices.carrefour.co.il            |
-| Super-Pharm | prices.super-pharm.co.il          |
-| Hazi Hinam  | shop.hazi-hinam.co.il/Prices      |
-| Wolt        | wm-gateway.wolt.com/isr-prices    |
-| Shufersal   | prices.shufersal.co.il            |
+Each portal is one class in [crawler/platforms](crawler/platforms) with its own download handler
+(`download()`); chains on the same portal share it.
+
+| platform    | site                              | download handler |
+|-------------|-----------------------------------|------------------|
+| Cerberus    | url.retail.publishedprices.co.il  | GET with the logged-in session |
+| Bina        | kingstore, maayan2000, zolvebegadol, superbareket, shuk-hayir, shefabirkathashem, goodpharm, ktshivuk, paz, citymarketkiryatgat, citymarketgivatayim `.binaprojects.com` | `Download.aspx` returns the real URL, then GET |
+| Carrefour   | prices.carrefour.co.il            | direct GET |
+| Super-Pharm | prices.super-pharm.co.il          | direct GET |
+| Hazi Hinam  | shop.hazi-hinam.co.il/Prices      | direct GET |
+| Wolt        | wm-gateway.wolt.com/isr-prices    | direct GET |
+| Shufersal   | prices.shufersal.co.il            | direct GET |

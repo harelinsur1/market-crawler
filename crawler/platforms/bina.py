@@ -23,7 +23,7 @@ class Bina(Platform):
             if item.get("FileNm", "").startswith("PriceFull")
         ]
 
-    def resolve_url(self, remote: RemoteFile) -> str:
+    def download(self, remote: RemoteFile, path: str) -> None:
         # Download.aspx returns JSON: [{"SPath": "<real file url>"}]
         resp = self.get(remote.url, params={"FileNm": remote.name})
-        return resp.json()[0]["SPath"]
+        self.save(resp.json()[0]["SPath"], path)
