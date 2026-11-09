@@ -43,9 +43,10 @@ _BINA_SUBDOMAINS = {
     "Shefa Birkat Hashem": "shefabirkathashem",
     "Good Pharm": "goodpharm",
     "KT Shivuk": "ktshivuk",
-    "Paz (Bina)": "paz",
-    "City Market Kiryat Gat": "citymarketkiryatgat",
-    "City Market Givatayim": "citymarketgivatayim",
+    # This portal publishes both City Market chains (7290058266241 and 7290058288090).
+    # citymarketgivatayim.binaprojects.com only has Stores files, and paz.binaprojects.com
+    # has not been updated since 2024, so neither is listed.
+    "City Market": "citymarketkiryatgat",
 }
 
 

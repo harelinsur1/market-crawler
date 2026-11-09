@@ -10,6 +10,8 @@ import csv
 import logging
 import os
 import sys
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
@@ -33,6 +35,8 @@ def parse_args(argv):
                         help="CSV path for --list-only (default: <out>/<yyyymmdd-HHMM>/file_list.csv)")
     parser.add_argument("--list-chains", action="store_true", help="print configured chains and exit")
     parser.add_argument("--workers", type=int, default=8, help="parallel downloads (default: 8)")
+    parser.add_argument("--list-timeout", type=int, default=900,
+                        help="max seconds to wait for chain listings (default: 900)")
     parser.add_argument("-v", "--verbose", action="store_true")
     return parser.parse_args(argv)
 
@@ -50,6 +54,34 @@ def list_chain(name, factory, day):
     files = platform.list_price_full(day)
     log.info("%-45s %5d PriceFull files listed", name, len(files))
     return files
+
+
+def list_all(chains, day, timeout):
+    """List every chain in a daemon thread; chains still running after `timeout` are abandoned."""
+    results, errors = {}, {}
+
+    def worker(name, factory):
+        try:
+            results[name] = list_chain(name, factory, day)
+        except Exception as exc:  # one broken portal must not stop the others
+            errors[name] = exc
+
+    threads = [threading.Thread(target=worker, args=item, daemon=True) for item in chains.items()]
+    for thread in threads:
+        thread.start()
+    deadline = time.monotonic() + timeout
+    for thread in threads:
+        thread.join(max(0.0, deadline - time.monotonic()))
+
+    listed, failed = [], []
+    for name in chains:
+        if name in results:
+            listed.extend(results[name])
+        else:
+            failed.append(name)
+            reason = errors.get(name, "no response within %ds" % timeout)
+            log.error("%-45s listing failed: %s", name, reason)
+    return listed, failed
 
 
 def write_list(path, selected):
@@ -83,15 +115,7 @@ def main(argv=None):
     log.info("cutoff: %s, chains: %d", cutoff.strftime("%Y-%m-%d %H:%M"), len(chains))
 
     # 1. list PriceFull files of every chain (in parallel)
-    listed, failed = [], []
-    with ThreadPoolExecutor(max_workers=min(len(chains), 8)) as pool:
-        futures = {pool.submit(list_chain, n, f, cutoff.date()): n for n, f in chains.items()}
-        for future in as_completed(futures):
-            try:
-                listed.extend(future.result())
-            except Exception as exc:  # one broken portal must not stop the others
-                failed.append(futures[future])
-                log.error("%-45s listing failed: %s", futures[future], exc)
+    listed, failed = list_all(chains, cutoff.date(), args.list_timeout)
 
     # 2. keep the latest file per store at or before the cutoff
     selected = select_latest(listed, cutoff)

@@ -36,22 +36,35 @@ class Cerberus(Platform):
             raise RuntimeError("login failed for user %r" % self.username)
         return self._csrf(resp.text)
 
-    def list_price_full(self, day: date) -> List[RemoteFile]:
-        token = self._login()
+    def _list_dir(self, token: str, cd: str, search: str) -> list:
         resp = self.post(
             BASE_URL + "/file/json/dir",
             data={
                 "sEcho": "1",
                 "iDisplayStart": "0",
                 "iDisplayLength": "100000",
-                "sSearch": "PriceFull",
+                "sSearch": search,
                 "mDataProp_1": "fname",
-                "cd": "/",
+                "cd": cd,
                 "csrftoken": token,
             },
         )
-        return [
-            self.make_file(row["fname"], BASE_URL + "/file/d/" + row["fname"])
-            for row in resp.json().get("aaData", [])
-            if row.get("type") == "file"
+        return resp.json().get("aaData", [])
+
+    def list_price_full(self, day: date) -> List[RemoteFile]:
+        token = self._login()
+        # Some accounts (e.g. Super Yuda) keep their files in a subfolder instead of the root.
+        folders = [""] + [
+            row["fname"]
+            for row in self._list_dir(token, "/", "")
+            if row.get("type") == "folder" and row.get("fname")
         ]
+        files = []
+        for folder in folders:
+            prefix = folder + "/" if folder else ""
+            for row in self._list_dir(token, "/" + folder, "PriceFull"):
+                if row.get("type") == "file" and row.get("fname"):
+                    files.append(
+                        self.make_file(row["fname"], BASE_URL + "/file/d/" + prefix + row["fname"])
+                    )
+        return files

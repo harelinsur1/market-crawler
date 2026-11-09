@@ -35,6 +35,7 @@ The list is saved to `data\<yyyymmdd-HHMM>\file_list.csv` with the columns
 | `python -m crawler --cutoff-hour 14` | change the default cutoff hour (last 14:00) |
 | `python -m crawler --out D:\prices` | output folder (default `data`) |
 | `python -m crawler --workers 4` | number of parallel downloads (default 8) |
+| `python -m crawler --list-timeout 120` | max seconds to wait for all chain listings; slower chains are skipped and reported as failed (default 900; Shufersal is slow and needs several minutes) |
 | `python -m crawler -v` | verbose logging |
 | `python -m crawler --list-only --list-file list.csv` | save the `--list-only` list to a custom path |
 
@@ -48,6 +49,41 @@ Existing files are skipped, so it is safe to run again.
 
 The exit code is `0` on success and `1` if any chain or download failed. A failing portal
 (e.g. Shufersal timing out) is logged and does not stop the other chains.
+
+## Chain names
+
+Names used by `--chains` / `--list-chains` and in the `chain` column of the list CSV:
+
+| English             | עברית            |
+|---------------------|------------------|
+| Rami Levy           | רמי לוי          |
+| Osher Ad            | אושר עד          |
+| Yohananof           | יוחננוף          |
+| Tiv Taam            | טיב טעם          |
+| Dor Alon            | דור אלון         |
+| Keshet Teamim       | קשת טעמים        |
+| Fresh Market        | פרש מרקט         |
+| Stop Market         | סטופ מרקט        |
+| Politzer            | פוליצר           |
+| Salach Dabach       | סאלח דבאח        |
+| Paz (Yellow)        | פז (יילו)        |
+| Super Yuda          | סופר יודה        |
+| Super Cofix         | סופר קופיקס      |
+| Super Dosh          | סופר דוש         |
+| King Store          | קינג סטור        |
+| Maayan 2000         | מעיין 2000       |
+| Zol VeBegadol       | זול ובגדול       |
+| Super Bareket       | סופר ברקת        |
+| Shuk HaIr           | שוק העיר         |
+| Shefa Birkat Hashem | שפע ברכת השם     |
+| Good Pharm          | גוד פארם         |
+| KT Shivuk           | ק.ט. שיווק       |
+| City Market         | סיטי מרקט        |
+| Shufersal           | שופרסל           |
+| Carrefour           | קרפור            |
+| Super-Pharm         | סופר-פארם        |
+| Hazi Hinam          | חצי חינם         |
+| Wolt                | וולט             |
 
 ## Portals
 
