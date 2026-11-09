@@ -75,12 +75,17 @@ Names used by `--chains` / `--list-chains` and in the `chain` column of the list
 | King Store          | קינג סטור        |
 | Maayan 2000         | מעיין 2000       |
 | Zol VeBegadol       | זול ובגדול       |
-| Super Bareket       | סופר ברקת        |
+| Of VeHodu Bareket   | עוף והודו ברקת   |
 | Shuk HaIr           | שוק העיר         |
 | Shefa Birkat Hashem | שפע ברכת השם     |
 | Good Pharm          | גוד פארם         |
 | KT Shivuk           | ק.ט. שיווק       |
 | City Market         | סיטי מרקט        |
+| Super Sapir         | סופר ספיר        |
+| Victory             | ויקטורי          |
+| H. Cohen            | ח. כהן           |
+| Mahsanei HaShuk     | מחסני השוק       |
+| Netiv HaChesed      | נתיב החסד        |
 | Shufersal           | שופרסל           |
 | Carrefour           | קרפור            |
 | Super-Pharm         | סופר-פארם        |
@@ -95,7 +100,9 @@ Each portal is one class in [crawler/platforms](crawler/platforms) with its own 
 | platform    | site                              | download handler |
 |-------------|-----------------------------------|------------------|
 | Cerberus    | url.retail.publishedprices.co.il  | GET with the logged-in session |
-| Bina        | kingstore, maayan2000, zolvebegadol, superbareket, shuk-hayir, shefabirkathashem, goodpharm, ktshivuk, paz, citymarketkiryatgat, citymarketgivatayim `.binaprojects.com` | `Download.aspx` returns the real URL, then GET |
+| Bina        | kingstore, maayan2000, zolvebegadol, superbareket, shuk-hayir, shefabirkathashem, goodpharm, ktshivuk, paz, citymarketkiryatgat, citymarketgivatayim, supersapir `.binaprojects.com` | `Download.aspx` returns the real URL, then GET |
+| Laibcatalog | laibcatalog.co.il (victory, hcohen, mshuk) | direct GET |
+| Netiv HaChesed | app.netiv-hesed.com           | direct GET |
 | Carrefour   | prices.carrefour.co.il            | direct GET |
 | Super-Pharm | prices.super-pharm.co.il          | direct GET |
 | Hazi Hinam  | shop.hazi-hinam.co.il/Prices      | direct GET |
