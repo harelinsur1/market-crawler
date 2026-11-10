@@ -1,6 +1,9 @@
 # Crawler output (default --out directory)
 /data/
 
+# Diff report results
+/gov_chains_check/report/*.html
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

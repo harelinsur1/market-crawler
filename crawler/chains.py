@@ -2,7 +2,7 @@
 
 The chains are read from resources/chains.csv, built from the official list on
 https://www.gov.il/he/pages/cpfta_prices_regulations (Cloudflare-protected, so it is
-maintained by hand; gov_chains_check/check_gov_chains.py reports differences) and the platform keys
+maintained by hand; scripts/check_gov_chains.py reports differences) and the platform keys
 on https://www.over.org.il/projects/prices?tab=chains.
 To add a chain, add a row whose `platform` is one of _PLATFORMS and whose `key` is the
 portal's account / subdomain.

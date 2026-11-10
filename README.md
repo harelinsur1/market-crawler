@@ -4,7 +4,7 @@ Downloads the latest `PriceFull` file of every store, published at or before the
 (today 11:00 if already past it, otherwise yesterday 11:00, local time).
 Chain portals are listed on https://www.gov.il/he/pages/cpfta_prices_regulations
 (Cloudflare-protected, so the list is maintained by hand in [resources/chains.csv](resources/chains.csv);
-`python gov_chains_check/check_gov_chains.py` reports differences from gov.il).
+`python scripts/check_gov_chains.py` reports differences from gov.il).
 
 ## Setup
 
@@ -95,7 +95,7 @@ portal's account / subdomain.
 | Fresh Market           | פז — פרשמרקט         | 7290876100000 | cerberus   | freshmarket         | 47  |
 | KT Mishnat Yosef       | קיי.טי. — משנת יוסף  | 5144744100002 | kt         | kt                  | 1   |
 | KT Shivuk              | קיי.טי. יבוא ושיווק  | 7290058289400 | bina       | ktshivuk            | 4   |
-| Keshet Teamim          | קשת טעמים            | 7290055700007 | cerberus   | keshet              | 28  |
+| Keshet Teamim          | קשת טעמים            | 7290785400000 | cerberus   | keshet              | 28  |
 | Rami Levy              | רמי לוי              | 7290058140886 | cerberus   | ramilevi            | 99  |
 | Shufersal              | שופרסל               | 7290027600007 | shufersal  | shufersal           | 430 |
 | Shuk HaIr              | שוק העיר             | 7290058148776 | bina       | shuk-hayir          | 26  |
@@ -103,22 +103,6 @@ portal's account / subdomain.
 
 Chain codes are as listed on gov.il; the code in the downloaded file names can differ
 (e.g. Keshet Teamim also publishes as 7290785400000, City Market Kiryat Gat as 7290058288090).
-
-### Checking the list against gov.il
-
-[gov_chains_check/check_gov_chains.py](gov_chains_check/check_gov_chains.py) opens the gov.il page
-in Chrome (Selenium), reads the chain names from the retailers table and compares them with the
-`name_he_gov` column of `chains.csv`. Requires Google Chrome; the driver is downloaded automatically.
-
-```powershell
-python gov_chains_check/check_gov_chains.py              # opens a Chrome window
-python gov_chains_check/check_gov_chains.py --headless   # no window (Cloudflare may block it)
-python gov_chains_check/check_gov_chains.py --timeout 120  # seconds to wait for the page (default 90)
-```
-
-It prints the names found on gov.il but not in `chains.csv` (`+`) and the names in `chains.csv`
-but not on gov.il (`-`). The exit code is `0` if the lists match and `1` if they differ.
-On Windows, set `$env:PYTHONIOENCODING="utf-8"` first if the Hebrew names fail to print.
 
 ## Portals
 

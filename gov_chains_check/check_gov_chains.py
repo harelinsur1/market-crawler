@@ -3,12 +3,15 @@
 Usage (from the project folder):
     python gov_chains_check/check_gov_chains.py [--headless] [--timeout 90]
 
+The result is also saved as an RTL HTML report in gov_chains_check/report/.
 Exit code is 0 when the lists match, 1 when there are differences.
 """
 import argparse
 import csv
+import html
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import List, Set
 
@@ -19,6 +22,35 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 URL = "https://www.gov.il/he/pages/cpfta_prices_regulations"
 CHAINS_CSV = Path(__file__).resolve().parent.parent / "resources" / "chains.csv"
+REPORT_DIR = Path(__file__).resolve().parent / "report"
+# Group rows on gov.il whose links cell lists several sub-chains. Each sub-chain found in that cell
+# is compared as "<group> - <sub-chain>" (the same form is used in name_he_gov in chains.csv).
+SUB_CHAINS = {'פז קמעונאות ואנרגיה בע"מ': ["יילו", "סופר יודה", "פרשמרקט"]}
+
+HTML_TEMPLATE = """<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>השוואת רשתות מול gov.il - {date}</title>
+<style>
+  body {{ font-family: Arial, sans-serif; margin: 2em; direction: rtl; }}
+  table {{ border-collapse: collapse; margin-bottom: 1.5em; }}
+  th, td {{ border: 1px solid #ccc; padding: 4px 10px; text-align: right; }}
+  th {{ background: #f0f0f0; }}
+  .added {{ color: #1a7f37; }}
+  .removed {{ color: #cf222e; }}
+  .ok {{ color: #1a7f37; font-weight: bold; }}
+</style>
+</head>
+<body>
+<h1>השוואת רשתות מול gov.il</h1>
+<p>תאריך: {date}<br>
+מקור: <a href="{url}">{url}</a><br>
+נמצאו {gov_count} רשתות ב-gov.il, {csv_count} ב-{csv_name}</p>
+{body}
+</body>
+</html>
+"""
 
 
 def normalize(text: str) -> str:
@@ -56,8 +88,14 @@ def fetch_gov_chains(headless: bool, timeout: int) -> List[str]:
         names = []  # type: List[str]
         for cells in table_rows(driver):
             name = normalize(cells[0].text)
-            if name and name not in names:
-                names.append(name)
+            entries = [name]
+            if name in SUB_CHAINS:
+                links = normalize(cells[1].text)
+                # Fall back to the group name if no sub-chain is found, so the change shows up in the report.
+                entries = ["{} - {}".format(name, s) for s in SUB_CHAINS[name] if s in links] or [name]
+            for entry in entries:
+                if entry and entry not in names:
+                    names.append(entry)
         return names
     finally:
         driver.quit()
@@ -66,6 +104,33 @@ def fetch_gov_chains(headless: bool, timeout: int) -> List[str]:
 def load_csv_chains() -> Set[str]:
     with CHAINS_CSV.open(encoding="utf-8", newline="") as f:
         return {normalize(row["name_he_gov"]) for row in csv.DictReader(f) if row["name_he_gov"].strip()}
+
+
+def name_list(title: str, names: List[str], css: str) -> str:
+    rows = "".join("<tr><td>{}</td><td>{}</td></tr>\n".format(i, html.escape(n))
+                   for i, n in enumerate(names, 1))
+    return ("<h2 class=\"{}\">{} ({})</h2>\n<table>\n<tr><th>#</th><th>שם</th></tr>\n{}</table>\n"
+            .format(css, title, len(names), rows))
+
+
+def write_report(gov: List[str], known: Set[str], added: List[str], removed: List[str]) -> Path:
+    now = datetime.now()
+    if added or removed:
+        body = ""
+        if added:
+            body += name_list("קיימות ב-gov.il ולא ב-chains.csv", added, "added")
+        if removed:
+            body += name_list("קיימות ב-chains.csv ולא ב-gov.il", removed, "removed")
+    else:
+        body = "<p class=\"ok\">אין הבדלים.</p>\n"
+    body += name_list("כל הרשתות ב-gov.il", gov, "")
+
+    REPORT_DIR.mkdir(exist_ok=True)
+    path = REPORT_DIR / "gov_chains_{}.html".format(now.strftime("%Y%m%d-%H%M%S"))
+    path.write_text(HTML_TEMPLATE.format(
+        date=now.strftime("%d/%m/%Y %H:%M"), url=URL, gov_count=len(gov), csv_count=len(known),
+        csv_name=CHAINS_CSV.name, body=body), encoding="utf-8")
+    return path
 
 
 def main() -> int:
@@ -80,6 +145,7 @@ def main() -> int:
 
     added = [n for n in gov if n not in known]
     removed = sorted(known - set(gov))
+    print("HTML report saved to {}".format(write_report(gov, known, added, removed)))
 
     if not added and not removed:
         print("No differences.")
