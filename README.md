@@ -57,6 +57,37 @@ stores selected and files downloaded (failed).
 The exit code is `0` on success and `1` if any chain or download failed. A failing portal
 (e.g. Shufersal timing out) is logged and does not stop the other chains.
 
+## Combine XML files into one CSV (`xml_to_csv`)
+
+Merges every extracted PriceFull XML file of a run into one CSV with the columns of the
+`[cpi].[dbo].[foodChainPrices]` table:
+`PriceUpdateDate, ItemCode, ItemType, ItemName, ManufacturerName, ManufactureCountry,
+ManufacturerItemDescription, UnitQty, Quantity, bIsWeighted, UnitOfMeasure, QtyInPackage,
+ItemPrice, UnitOfMeasurePrice, AllowDiscount, ItemStatus, filename, chain, DateInserted`.
+
+```powershell
+python -m xml_to_csv                        # latest data\<yyyymmdd-HHMM> folder
+python -m xml_to_csv 20261110-1100          # a specific run folder
+python -m xml_to_csv.inspect_schema         # report the tag names used by each chain
+```
+
+| command | explanation |
+|---------|-------------|
+| `python -m xml_to_csv 20261110-1100` | run folder under `--data` (default: the latest one) |
+| `python -m xml_to_csv --data D:\prices` | data root (default `data`) |
+| `python -m xml_to_csv --out D:\prices.csv` | output CSV (default `data\<run>\prices_<run>.csv`) |
+| `python -m xml_to_csv --workers 4` | parallel parser processes (default: number of CPUs) |
+| `python -m xml_to_csv.inspect_schema --sample 0` | inspect all files instead of 5 per chain |
+
+Chains do not use the same tag names (e.g. `PriceUpdateDate` / `PriceUpdateTime`,
+`ManufacturerName` / `ManufactureName`, `bIsWeighted` / `BisWeighted` / `blsWeighted`).
+The conversion dictionary is `ALIASES` in [xml_to_csv/schema.py](xml_to_csv/schema.py)
+(case-insensitive, first non-empty tag wins). As in the original notebook, `ManufacturerName`,
+`ManufactureCountry` and `ManufacturerItemDescription` are cut to 50 / 25 / 125 characters and
+`לא ידוע` in `Quantity` / `UnitOfMeasurePrice` becomes empty. `filename` is the downloaded file
+name without extension, `chain` is the English chain name from `file_list.csv`. Item tags that are
+not mapped are listed at the end of the run so new variants can be added to the dictionary.
+
 ## Chains
 
 The chains are read from [resources/chains.csv](resources/chains.csv)
