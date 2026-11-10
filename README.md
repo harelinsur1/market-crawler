@@ -3,7 +3,8 @@
 Downloads the latest `PriceFull` file of every store, published at or before the last 11:00
 (today 11:00 if already past it, otherwise yesterday 11:00, local time).
 Chain portals are listed on https://www.gov.il/he/pages/cpfta_prices_regulations
-(Cloudflare-protected, so the list is maintained by hand in [crawler/chains.py](crawler/chains.py)).
+(Cloudflare-protected, so the list is maintained by hand in [resources/chains.csv](resources/chains.csv);
+`python gov_chains_check/check_gov_chains.py` reports differences from gov.il).
 
 ## Setup
 
@@ -17,7 +18,7 @@ pip install -r requirements.txt
 ## Usage
 
 ```powershell
-python -m crawler --list-only      # dry run: print the files that would be downloaded and save them to a CSV
+python -m crawler --list-only      # dry run: list the files that would be downloaded and save them to a CSV
 python -m crawler                  # download them
 ```
 
@@ -43,68 +44,97 @@ Options can be combined, e.g. `python -m crawler --chains "rami levy" --cutoff "
 
 ### Output
 
-Files are saved to `data\<yyyymmdd-HHMM>\<chain id>\<file name>`, for example
-`data\20261109-1100\7290058140886\PriceFull7290058140886-001-001-20261109-001001.gz`.
+Files are saved to `data\<yyyymmdd-HHMM>\<chain id>_<chain name>\<file name>`, for example
+`data\20261109-1100\7290058140886_Rami-Levy\PriceFull7290058140886-001-001-20261109-001001.gz`.
 Each file is then extracted into a folder with the same name (without `.gz`), e.g.
-`...\7290058140886\PriceFull7290058140886-001-001-20261109-001001\PriceFull7290058140886-001-001-20261109-001001.xml`.
+`...\7290058140886_Rami-Levy\PriceFull7290058140886-001-001-20261109-001001\PriceFull7290058140886-001-001-20261109-001001.xml`.
 Existing files and folders are skipped, so it is safe to run again.
+
+Each chain's listing line shows its English and Hebrew names and its chain id(s), and the
+run ends with a summary: total time, chains scanned (ok / failed), PriceFull files listed,
+stores selected and files downloaded (failed).
 
 The exit code is `0` on success and `1` if any chain or download failed. A failing portal
 (e.g. Shufersal timing out) is logged and does not stop the other chains.
 
-## Chain names
+## Chains
 
-Names used by `--chains` / `--list-chains` and in the `chain` column of the list CSV:
+The chains are read from [resources/chains.csv](resources/chains.csv)
+(`chain_code, name_en, name_he_gov, name_he_over, platform, key, display_name, branches`).
+The English name is used by `--chains` / `--list-chains` and in the `chain` column of the list CSV.
+To add a chain, add a row whose `platform` is one of the portals below and whose `key` is the
+portal's account / subdomain.
 
-| English             | עברית            |
-|---------------------|------------------|
-| Rami Levy           | רמי לוי          |
-| Osher Ad            | אושר עד          |
-| Yohananof           | יוחננוף          |
-| Tiv Taam            | טיב טעם          |
-| Dor Alon            | דור אלון         |
-| Keshet Teamim       | קשת טעמים        |
-| Fresh Market        | פרש מרקט         |
-| Stop Market         | סטופ מרקט        |
-| Politzer            | פוליצר           |
-| Salach Dabach       | סאלח דבאח        |
-| Paz (Yellow)        | פז (יילו)        |
-| Super Yuda          | סופר יודה        |
-| Super Cofix         | סופר קופיקס      |
-| Super Dosh          | סופר דוש         |
-| King Store          | קינג סטור        |
-| Maayan 2000         | מעיין 2000       |
-| Zol VeBegadol       | זול ובגדול       |
-| Of VeHodu Bareket   | עוף והודו ברקת   |
-| Shuk HaIr           | שוק העיר         |
-| Shefa Birkat Hashem | שפע ברכת השם     |
-| Good Pharm          | גוד פארם         |
-| KT Shivuk           | ק.ט. שיווק       |
-| City Market         | סיטי מרקט        |
-| Super Sapir         | סופר ספיר        |
-| Victory             | ויקטורי          |
-| H. Cohen            | ח. כהן           |
-| Mahsanei HaShuk     | מחסני השוק       |
-| Netiv HaChesed      | נתיב החסד        |
-| Shufersal           | שופרסל           |
-| Carrefour           | קרפור            |
-| Super-Pharm         | סופר-פארם        |
-| Hazi Hinam          | חצי חינם         |
-| Wolt                | וולט             |
+| English                | עברית                | chain code    | platform   | key                 | branches |
+|------------------------|----------------------|---------------|------------|---------------------|---------:|
+| King Store             | קינג סטור            | 7290058108879 | bina       | kingstore           | 48  |
+| Maayan 2000            | מעיין אלפיים         | 7290058159628 | bina       | maayan2000          | 38  |
+| Good Pharm             | גוד פארם             | 7290058197699 | bina       | goodpharm           | 83  |
+| Carrefour              | קרפור                | 7290055700007 | carrefour  | carrefour           | 203 |
+| Dor Alon               | דור אלון             | 7290492000005 | cerberus   | doralon             | 158 |
+| Wolt                   | וולט מרקט            | 7290058249350 | wolt       | wolt                | 37  |
+| Victory                | ויקטורי              | 7290696200003 | laib       | victory             | 70  |
+| Zol VeBegadol          | זול ובגדול           | 7290058173198 | bina       | zolvebegadol        | 70  |
+| H. Cohen               | ח. כהן               | 7290455000004 | laib       | hcohen              | 5   |
+| Tiv Taam               | טיב טעם              | 7290873255550 | cerberus   | tivtaam             | 54  |
+| Mahsanei HaShuk        | מחסני השוק           | 7290661400001 | laib       | mshuk               | 71  |
+| Hazi Hinam             | חצי חינם             | 7290700100008 | hazihinam  | hazihinam           | 13  |
+| Yohananof              | יוחננוף              | 7290803800003 | cerberus   | yohananof           | 49  |
+| Osher Ad               | אושר עד              | 7290103152017 | cerberus   | osherad             | 24  |
+| Netiv HaChesed         | נתיב החסד — סופר חסד | 7290058160839 | netivhesed | netivhesed          | 91  |
+| Salach Dabach          | סאלח דבאח            | 7290526500006 | cerberus   | salachd             | 6   |
+| Super Sapir            | סופר ספיר            | 7290058156016 | bina       | supersapir          | 102 |
+| Super-Pharm            | סופר-פארם            | 7290172900007 | superpharm | superpharm          | 307 |
+| City Market Kiryat Gat | סיטי מרקט קריית גת   | 7290058266241 | bina       | citymarketkiryatgat | 31  |
+| City Market            | סיטי מרקט            | 7290000000003 | citymarket | citymarket          | 31  |
+| Stop Market            | סטופ מרקט            | 7290639000004 | cerberus   | stop_market         | 12  |
+| Of VeHodu Bareket      | עוף והודו ברקת       | 7290875100001 | bina       | superbareket        | 15  |
+| Politzer               | פוליצר               | 7291059100008 | cerberus   | politzer            | 8   |
+| Paz Yellow             | פז — יילו            | 7290644700005 | cerberus   | paz_bo              | 244 |
+| Super Yuda             | פז — סופר יודה       | 7290058177776 | cerberus   | yuda_ho             | 28  |
+| Fresh Market           | פז — פרשמרקט         | 7290876100000 | cerberus   | freshmarket         | 47  |
+| KT Mishnat Yosef       | קיי.טי. — משנת יוסף  | 5144744100002 | kt         | kt                  | 1   |
+| KT Shivuk              | קיי.טי. יבוא ושיווק  | 7290058289400 | bina       | ktshivuk            | 4   |
+| Keshet Teamim          | קשת טעמים            | 7290055700007 | cerberus   | keshet              | 28  |
+| Rami Levy              | רמי לוי              | 7290058140886 | cerberus   | ramilevi            | 99  |
+| Shufersal              | שופרסל               | 7290027600007 | shufersal  | shufersal           | 430 |
+| Shuk HaIr              | שוק העיר             | 7290058148776 | bina       | shuk-hayir          | 26  |
+| Shefa Birkat Hashem    | שפע ברכת השם         | 7290058134977 | bina       | shefabirkathashem   | 22  |
+
+Chain codes are as listed on gov.il; the code in the downloaded file names can differ
+(e.g. Keshet Teamim also publishes as 7290785400000, City Market Kiryat Gat as 7290058288090).
+
+### Checking the list against gov.il
+
+[gov_chains_check/check_gov_chains.py](gov_chains_check/check_gov_chains.py) opens the gov.il page
+in Chrome (Selenium), reads the chain names from the retailers table and compares them with the
+`name_he_gov` column of `chains.csv`. Requires Google Chrome; the driver is downloaded automatically.
+
+```powershell
+python gov_chains_check/check_gov_chains.py              # opens a Chrome window
+python gov_chains_check/check_gov_chains.py --headless   # no window (Cloudflare may block it)
+python gov_chains_check/check_gov_chains.py --timeout 120  # seconds to wait for the page (default 90)
+```
+
+It prints the names found on gov.il but not in `chains.csv` (`+`) and the names in `chains.csv`
+but not on gov.il (`-`). The exit code is `0` if the lists match and `1` if they differ.
+On Windows, set `$env:PYTHONIOENCODING="utf-8"` first if the Hebrew names fail to print.
 
 ## Portals
 
 Each portal is one class in [crawler/platforms](crawler/platforms) with its own download handler
 (`download()`); chains on the same portal share it.
 
-| platform    | site                              | download handler |
-|-------------|-----------------------------------|------------------|
-| Cerberus    | url.retail.publishedprices.co.il  | GET with the logged-in session |
-| Bina        | kingstore, maayan2000, zolvebegadol, superbareket, shuk-hayir, shefabirkathashem, goodpharm, ktshivuk, paz, citymarketkiryatgat, citymarketgivatayim, supersapir `.binaprojects.com` | `Download.aspx` returns the real URL, then GET |
-| Laibcatalog | laibcatalog.co.il (victory, hcohen, mshuk) | direct GET |
-| Netiv HaChesed | app.netiv-hesed.com           | direct GET |
-| Carrefour   | prices.carrefour.co.il            | direct GET |
-| Super-Pharm | prices.super-pharm.co.il          | direct GET |
-| Hazi Hinam  | shop.hazi-hinam.co.il/Prices      | direct GET |
-| Wolt        | wm-gateway.wolt.com/isr-prices    | direct GET |
-| Shufersal   | prices.shufersal.co.il            | direct GET |
+| platform (CSV) | class       | site                              | download handler |
+|----------------|-------------|-----------------------------------|------------------|
+| cerberus       | Cerberus    | url.retail.publishedprices.co.il (key = user name) | GET with the logged-in session |
+| bina           | Bina        | `<key>.binaprojects.com`          | `Download.aspx` returns the real URL, then GET |
+| laib           | Laibcatalog | laibcatalog.co.il (victory, hcohen, mshuk) | direct GET |
+| netivhesed     | NetivHesed  | app.netiv-hesed.com               | direct GET |
+| carrefour      | Carrefour   | prices.carrefour.co.il            | direct GET |
+| superpharm     | SuperPharm  | prices.super-pharm.co.il          | direct GET |
+| hazihinam      | HaziHinam   | shop.hazi-hinam.co.il/Prices      | direct GET |
+| wolt           | Wolt        | wm-gateway.wolt.com/isr-prices    | direct GET |
+| shufersal      | Shufersal   | prices.shufersal.co.il            | direct GET |
+| citymarket     | CityMarket  | www.citymarket-shops.co.il        | direct GET |
+| kt             | KT          | list-files.w5871031-kt.workers.dev | direct GET |
