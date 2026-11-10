@@ -9,17 +9,20 @@ import argparse
 import csv
 import logging
 import os
+import re
 import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from .chains import CHAINS
-from .downloader import fetch
+from .chains import CHAINS, HEBREW_NAMES
+from .downloader import fetch, safe_name
+from .filename import parse_filename
 from .selection import last_cutoff, select_latest
 
 log = logging.getLogger("crawler")
+_NON_ALNUM = re.compile(r"[^A-Za-z0-9]+")
 
 
 def parse_args(argv):
@@ -32,7 +35,7 @@ def parse_args(argv):
     parser.add_argument("--list-only", action="store_true",
                         help="print selected files and save them to a CSV, do not download")
     parser.add_argument("--list-file",
-                        help="CSV path for --list-only (default: <out>/<yyyymmdd-HHMM>/file_list.csv)")
+                        help="CSV path for the file list (default: <out>/<yyyymmdd-HHMM>/file_list.csv)")
     parser.add_argument("--list-chains", action="store_true", help="print configured chains and exit")
     parser.add_argument("--workers", type=int, default=8, help="parallel downloads (default: 8)")
     parser.add_argument("--list-timeout", type=int, default=900,
@@ -52,8 +55,37 @@ def pick_chains(filters):
 def list_chain(name, factory, day):
     platform = factory()
     files = platform.list_price_full(day)
-    log.info("%-45s %5d PriceFull files listed", name, len(files))
+    infos = (parse_filename(f.name) for f in files)
+    chain_ids = sorted({info.chain_id for info in infos if info is not None})
+    log.info("%-20s %-16s %-29s %5d PriceFull files listed",
+             name, HEBREW_NAMES.get(name, ""), ",".join(chain_ids) or "-", len(files))
     return files
+
+
+def chain_folder(chain_id, chain):
+    """Folder name for a chain, e.g. 7290058140886_Rami-Levy."""
+    return chain_id + "_" + _NON_ALNUM.sub("-", chain).strip("-")
+
+
+def report(start, chains, failed, listed, selected, downloaded=None, download_errors=0):
+    """Print a short end-of-run summary."""
+    chains_line = "%d (%d ok, %d failed%s)" % (
+        len(chains), len(chains) - len(failed), len(failed),
+        (": " + ", ".join(failed)) if failed else "")
+    if downloaded is None:
+        download_line = "- (--list-only)"
+    else:
+        download_line = "%d (%d failed)" % (downloaded, download_errors)
+    lines = [
+        ("total time", str(timedelta(seconds=round(time.monotonic() - start)))),
+        ("chains scanned", chains_line),
+        ("files listed", str(len(listed))),
+        ("stores selected", str(len(selected))),
+        ("files downloaded", download_line),
+    ]
+    print("\n===== summary =====")
+    for label, value in lines:
+        print("%-18s %s" % (label + ":", value))
 
 
 def list_all(chains, day, timeout):
@@ -84,20 +116,30 @@ def list_all(chains, day, timeout):
     return listed, failed
 
 
-def write_list(path, selected):
+def write_list(path, selected, local_paths=None):
+    """Write the selected files to CSV; with `local_paths` add a column with the downloaded file."""
     folder = os.path.dirname(path)
     if folder:
         os.makedirs(folder, exist_ok=True)
+    header = ["chain", "chain_id", "sub_chain", "store_id", "timestamp", "file_name"]
+    if local_paths is not None:
+        header.append("local_path")
     with open(path, "w", newline="", encoding="utf-8") as fh:
         writer = csv.writer(fh)
-        writer.writerow(["chain", "chain_id", "sub_chain", "store_id", "timestamp", "file_name"])
+        writer.writerow(header)
         for remote, info in selected:
-            writer.writerow([remote.chain, info.chain_id, info.sub_chain, info.store_id,
-                             info.timestamp.strftime("%Y-%m-%d %H:%M:%S"), remote.name])
+            row = [remote.chain, info.chain_id, info.sub_chain, info.store_id,
+                   info.timestamp.strftime("%Y-%m-%d %H:%M:%S"), remote.name]
+            if local_paths is not None:
+                row.append(local_paths.get(id(remote), ""))
+            writer.writerow(row)
 
 
 def main(argv=None):
+    start = time.monotonic()
     args = parse_args(sys.argv[1:] if argv is None else argv)
+    for stream in (sys.stdout, sys.stderr):  # Hebrew names on non-UTF-8 redirected output
+        stream.reconfigure(errors="replace")
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
                         format="%(asctime)s %(levelname)-7s %(message)s", datefmt="%H:%M:%S")
     logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -122,31 +164,37 @@ def main(argv=None):
     log.info("selected %d stores (latest PriceFull <= %s)", len(selected), cutoff.strftime("%H:%M"))
 
     base_dir = os.path.join(args.out, cutoff.strftime("%Y%m%d-%H%M"))
+    list_file = args.list_file or os.path.join(base_dir, "file_list.csv")
 
     if args.list_only:
-        for remote, info in selected:
-            print("%-28s %s" % (remote.chain, remote.name))
-        list_file = args.list_file or os.path.join(base_dir, "file_list.csv")
         write_list(list_file, selected)
         log.info("file list saved to %s", list_file)
+        report(start, chains, failed, listed, selected)
         return 0
 
-    # 3. download into <out>/<cutoff>/<chain id>/ and extract each file into a folder named after it
+    # 3. download into <out>/<cutoff>/<chain id>_<chain name>/ and extract each file into a
+    #    folder named after it
     ok = errors = 0
+    local_paths = {}  # id(remote) -> downloaded file path, only for successful downloads
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        futures = {pool.submit(fetch, remote, os.path.join(base_dir, info.chain_id)): remote
-                   for remote, info in selected}
+        futures = {}
+        for remote, info in selected:
+            target_dir = os.path.join(base_dir, chain_folder(info.chain_id, remote.chain))
+            futures[pool.submit(fetch, remote, target_dir)] = (remote, target_dir)
         for future in as_completed(futures):
-            remote = futures[future]
+            remote, target_dir = futures[future]
             try:
                 log.debug("saved %s", future.result())
+                local_paths[id(remote)] = os.path.join(target_dir, safe_name(remote.name))
                 ok += 1
             except Exception as exc:
                 errors += 1
                 log.error("download failed %s (%s): %s", remote.name, remote.chain, exc)
 
-    log.info("done: %d downloaded, %d failed downloads, %d failed chains%s",
-             ok, errors, len(failed), (": " + ", ".join(failed)) if failed else "")
+    write_list(list_file, selected, local_paths)
+    log.info("file list saved to %s", list_file)
+
+    report(start, chains, failed, listed, selected, ok, errors)
     return 1 if errors or failed else 0
 
 
