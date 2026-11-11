@@ -1,0 +1,152 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "laibcatalog.co.il price portals",
+    "version": "1.0.0",
+    "description": "laibcatalog.co.il portals (`laibcatalog.co.il/<chain>/index.html`). The API is keyed by chain id and ignores dates (returns the chain's whole current catalog).\n\nChains: Victory (7290696200003) - ויקטורי, H. Cohen (7290455000004) - ח. כהן, Mahsanei HaShuk (7290661400001) - מחסני השוק"
+  },
+  "servers": [
+    {
+      "url": "https://laibcatalog.co.il/webapi"
+    }
+  ],
+  "paths": {
+    "/api/getfiles": {
+      "get": {
+        "summary": "List a chain's files",
+        "parameters": [
+          {
+            "name": "edi",
+            "in": "query",
+            "required": true,
+            "description": "Chain id.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "7290696200003",
+                "7290455000004",
+                "7290661400001"
+              ]
+            },
+            "examples": {
+              "victory": {
+                "summary": "Victory (7290696200003)",
+                "value": "7290696200003"
+              },
+              "hcohen": {
+                "summary": "H. Cohen (7290455000004)",
+                "value": "7290455000004"
+              },
+              "mshuk": {
+                "summary": "Mahsanei HaShuk (7290661400001)",
+                "value": "7290661400001"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "All current files (Price, PriceFull, Promo, Stores...).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LaibFile"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{chainId}/{fileName}": {
+      "get": {
+        "summary": "Download a file",
+        "parameters": [
+          {
+            "name": "chainId",
+            "in": "path",
+            "required": true,
+            "description": "Chain id.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "7290696200003",
+                "7290455000004",
+                "7290661400001"
+              ]
+            },
+            "examples": {
+              "victory": {
+                "summary": "Victory (7290696200003)",
+                "value": "7290696200003"
+              },
+              "hcohen": {
+                "summary": "H. Cohen (7290455000004)",
+                "value": "7290455000004"
+              },
+              "mshuk": {
+                "summary": "Mahsanei HaShuk (7290661400001)",
+                "value": "7290661400001"
+              }
+            }
+          },
+          {
+            "name": "fileName",
+            "in": "path",
+            "required": true,
+            "description": "File name as returned by the listing.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "PriceFull7290696200003-001-001-20261111-051146.gz"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The price file (gzip-compressed XML).",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LaibFile": {
+        "type": "object",
+        "properties": {
+          "branchNumber": {
+            "type": "integer",
+            "example": 1
+          },
+          "fileName": {
+            "type": "string",
+            "example": "PriceFull7290696200003-001-001-20261111-051146.gz"
+          },
+          "fileType": {
+            "type": "string",
+            "example": "promo"
+          },
+          "fileDate": {
+            "type": "string",
+            "example": "2026-11-11 05:11:46"
+          },
+          "fileSize": {
+            "type": "string",
+            "example": "28.64 KB"
+          }
+        }
+      }
+    }
+  }
+}

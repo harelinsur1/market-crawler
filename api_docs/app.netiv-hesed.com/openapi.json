@@ -1,0 +1,74 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Netiv HaChesed price portal",
+    "version": "1.0.0",
+    "description": "Netiv HaChesed portal - HTML table per day. Chains: Netiv HaChesed (7290058160839) - נתיב החסד — סופר חסד."
+  },
+  "servers": [
+    {
+      "url": "https://app.netiv-hesed.com"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Files page of a day",
+        "parameters": [
+          {
+            "name": "Date",
+            "in": "query",
+            "required": true,
+            "description": "Publication day (YYYY-MM-DD).",
+            "schema": {
+              "type": "string"
+            },
+            "example": "2026-11-11"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Table with `href=\"/Prices/Download?fileName=...\"` links.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Prices/Download": {
+      "get": {
+        "summary": "Download a file",
+        "parameters": [
+          {
+            "name": "fileName",
+            "in": "query",
+            "required": true,
+            "description": "File name from the page.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "PriceFull7290058160839-002-001-20261111-051729.GZ"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The price file (gzip-compressed XML).",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

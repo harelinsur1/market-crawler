@@ -1,0 +1,104 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "City Market price portal",
+    "version": "1.0.0",
+    "description": "City Market portal - paged HTML table filtered by day. Chains: City Market (7290000000003) - סיטי מרקט.\n\nFile names are shown without extension; downloads are `.xml.gz`. The last page number is in the `?p=N` pager links."
+  },
+  "servers": [
+    {
+      "url": "https://www.citymarket-shops.co.il"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Files table page",
+        "parameters": [
+          {
+            "name": "p",
+            "in": "query",
+            "required": true,
+            "description": "Page number (1-based).",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "t",
+            "in": "query",
+            "required": true,
+            "description": "File type; 1 = prices.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "1"
+          },
+          {
+            "name": "f",
+            "in": "query",
+            "required": true,
+            "description": "1 = full files only.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "1"
+          },
+          {
+            "name": "d",
+            "in": "query",
+            "required": true,
+            "description": "Publication day (YYYY-MM-DD).",
+            "schema": {
+              "type": "string"
+            },
+            "example": "2026-11-11"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Table rows: `<td>PriceFull...</td> ... href=\"/downloadFile/{fileId}\"`.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/downloadFile/{fileId}": {
+      "get": {
+        "summary": "Download a file",
+        "parameters": [
+          {
+            "name": "fileId",
+            "in": "path",
+            "required": true,
+            "description": "File id (GUID) from the table.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "98d44c9d-c498-4821-944f-8684df95eec4"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The price file (gzip-compressed XML).",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

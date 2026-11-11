@@ -1,0 +1,76 @@
+{
+  "info": {
+    "name": "list-files.w5871031-kt.workers.dev",
+    "description": "KT feed (Cloudflare worker) - one JSON list of every published file with a direct url (Backblaze B2 storage). Ignores dates. Chains: KT Mishnat Yosef (5144744100002) - קיי.טי. — משנת יוסף.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// {{date}} = collection variable (YYYY-MM-DD) or today when empty.",
+          "const pad = n => String(n).padStart(2, '0');",
+          "const now = new Date();",
+          "const iso = pm.collectionVariables.get('date') || `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;",
+          "const [y, m, d] = iso.split('-');",
+          "pm.variables.set('date', iso);",
+          "pm.variables.set('dateCompact', y + m + d);",
+          "pm.variables.set('dateDmy', `${d}/${m}/${y}`);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "date",
+      "value": "",
+      "description": "YYYY-MM-DD; empty = today"
+    },
+    {
+      "key": "fileUrl",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "List files",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "https://list-files.w5871031-kt.workers.dev/"
+      },
+      "protocolProfileBehavior": {
+        "strictSSL": false
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const item = (pm.response.json()).find(f => f.type === 'PriceFull' && f.url);",
+              "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+              "if (item) {",
+              "    pm.collectionVariables.set('fileUrl', item.url);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Download file",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{fileUrl}}",
+        "description": "Use \"Send and Download\" to save the file."
+      },
+      "protocolProfileBehavior": {
+        "strictSSL": false
+      }
+    }
+  ]
+}

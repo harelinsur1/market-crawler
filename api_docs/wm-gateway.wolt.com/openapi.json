@@ -1,0 +1,84 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Wolt price feed",
+    "version": "1.0.0",
+    "description": "Wolt price feed - static HTML index per day. Chains: Wolt (7290058249350) - וולט מרקט."
+  },
+  "servers": [
+    {
+      "url": "https://wm-gateway.wolt.com/isr-prices/public/v1"
+    }
+  ],
+  "paths": {
+    "/{date}.html": {
+      "get": {
+        "summary": "Index of a day",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "description": "Day (YYYY-MM-DD).",
+            "schema": {
+              "type": "string"
+            },
+            "example": "2026-11-11"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Relative links `download/{date}/{fileName}`.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/download/{date}/{fileName}": {
+      "get": {
+        "summary": "Download a file",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "description": "Day (YYYY-MM-DD).",
+            "schema": {
+              "type": "string"
+            },
+            "example": "2026-11-11"
+          },
+          {
+            "name": "fileName",
+            "in": "path",
+            "required": true,
+            "description": "File name as returned by the listing.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "PriceFull7290058249350-000-046-20261111-000006.gz"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The price file (gzip-compressed XML).",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

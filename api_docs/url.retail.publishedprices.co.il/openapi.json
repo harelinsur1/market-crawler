@@ -1,0 +1,444 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Cerberus (publishedprices.co.il) price portal",
+    "version": "1.0.0",
+    "description": "Cerberus web client shared by many chains; each chain is a user account.\n\nFlow: `GET /login` (session cookie `cftpSID` + `csrftoken` meta tag) -> `POST /login/user` (redirects to `/file`, whose page has a new `csrftoken`) -> `POST /file/json/dir` (list files) -> `GET /file/d/{fileName}`.\nSome accounts (e.g. Super Yuda) keep their files in a subfolder.\n\n| chain | chain id | username | password |\n|---|---|---|---|\n| Dor Alon | 7290492000005 | `doralon` | `` |\n| Tiv Taam | 7290873255550 | `tivtaam` | `` |\n| Yohananof | 7290803800003 | `yohananof` | `` |\n| Osher Ad | 7290103152017 | `osherad` | `` |\n| Salach Dabach | 7290526500006 | `salachd` | `12345` |\n| Stop Market | 7290639000004 | `stop_market` | `` |\n| Politzer | 7291059100008 | `politzer` | `` |\n| Paz Yellow | 7290644700005 | `paz_bo` | `paz468` |\n| Super Yuda | 7290058177776 | `yuda_ho` | `Yud@147` |\n| Fresh Market | 7290876100000 | `freshmarket` | `` |\n| Keshet Teamim | 7290785400000 | `keshet` | `` |\n| Rami Levy | 7290058140886 | `ramilevi` | `` |"
+  },
+  "servers": [
+    {
+      "url": "https://url.retail.publishedprices.co.il"
+    }
+  ],
+  "paths": {
+    "/login": {
+      "get": {
+        "summary": "Login page",
+        "description": "Sets the `cftpSID` cookie; the page has `<meta name=\"csrftoken\" content=\"...\">`.",
+        "responses": {
+          "200": {
+            "description": "Login page.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/login/user": {
+      "post": {
+        "summary": "Log in as a chain",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "example": "ramilevi"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": ""
+                  },
+                  "csrftoken": {
+                    "type": "string",
+                    "description": "Token from the login page."
+                  },
+                  "Submit": {
+                    "type": "string",
+                    "example": "Sign in"
+                  }
+                },
+                "required": [
+                  "username",
+                  "password",
+                  "csrftoken",
+                  "Submit"
+                ]
+              },
+              "examples": {
+                "doralon": {
+                  "summary": "Dor Alon (7290492000005)",
+                  "value": {
+                    "username": "doralon",
+                    "password": "",
+                    "csrftoken": "<csrftoken from GET /login>",
+                    "Submit": "Sign in"
+                  }
+                },
+                "tivtaam": {
+                  "summary": "Tiv Taam (7290873255550)",
+                  "value": {
+                    "username": "tivtaam",
+                    "password": "",
+                    "csrftoken": "<csrftoken from GET /login>",
+                    "Submit": "Sign in"
+                  }
+                },
+                "yohananof": {
+                  "summary": "Yohananof (7290803800003)",
+                  "value": {
+                    "username": "yohananof",
+                    "password": "",
+                    "csrftoken": "<csrftoken from GET /login>",
+                    "Submit": "Sign in"
+                  }
+                },
+                "osherad": {
+                  "summary": "Osher Ad (7290103152017)",
+                  "value": {
+                    "username": "osherad",
+                    "password": "",
+                    "csrftoken": "<csrftoken from GET /login>",
+                    "Submit": "Sign in"
+                  }
+                },
+                "salachd": {
+                  "summary": "Salach Dabach (7290526500006)",
+                  "value": {
+                    "username": "salachd",
+                    "password": "12345",
+                    "csrftoken": "<csrftoken from GET /login>",
+                    "Submit": "Sign in"
+                  }
+                },
+                "stop_market": {
+                  "summary": "Stop Market (7290639000004)",
+                  "value": {
+                    "username": "stop_market",
+                    "password": "",
+                    "csrftoken": "<csrftoken from GET /login>",
+                    "Submit": "Sign in"
+                  }
+                },
+                "politzer": {
+                  "summary": "Politzer (7291059100008)",
+                  "value": {
+                    "username": "politzer",
+                    "password": "",
+                    "csrftoken": "<csrftoken from GET /login>",
+                    "Submit": "Sign in"
+                  }
+                },
+                "paz_bo": {
+                  "summary": "Paz Yellow (7290644700005)",
+                  "value": {
+                    "username": "paz_bo",
+                    "password": "paz468",
+                    "csrftoken": "<csrftoken from GET /login>",
+                    "Submit": "Sign in"
+                  }
+                },
+                "yuda_ho": {
+                  "summary": "Super Yuda (7290058177776)",
+                  "value": {
+                    "username": "yuda_ho",
+                    "password": "Yud@147",
+                    "csrftoken": "<csrftoken from GET /login>",
+                    "Submit": "Sign in"
+                  }
+                },
+                "freshmarket": {
+                  "summary": "Fresh Market (7290876100000)",
+                  "value": {
+                    "username": "freshmarket",
+                    "password": "",
+                    "csrftoken": "<csrftoken from GET /login>",
+                    "Submit": "Sign in"
+                  }
+                },
+                "keshet": {
+                  "summary": "Keshet Teamim (7290785400000)",
+                  "value": {
+                    "username": "keshet",
+                    "password": "",
+                    "csrftoken": "<csrftoken from GET /login>",
+                    "Submit": "Sign in"
+                  }
+                },
+                "ramilevi": {
+                  "summary": "Rami Levy (7290058140886)",
+                  "value": {
+                    "username": "ramilevi",
+                    "password": "",
+                    "csrftoken": "<csrftoken from GET /login>",
+                    "Submit": "Sign in"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "302": {
+            "description": "Success: redirect to `/file`."
+          },
+          "200": {
+            "description": "Failure: the login page is shown again.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/file": {
+      "get": {
+        "summary": "File manager page",
+        "description": "Contains the `csrftoken` to use with `/file/json/dir`.",
+        "security": [
+          {
+            "cftpSID": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File manager page.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/file/json/dir": {
+      "post": {
+        "summary": "List a folder",
+        "security": [
+          {
+            "cftpSID": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sEcho": {
+                    "type": "string",
+                    "example": "1"
+                  },
+                  "iDisplayStart": {
+                    "type": "string",
+                    "example": "0"
+                  },
+                  "iDisplayLength": {
+                    "type": "string",
+                    "example": "100000"
+                  },
+                  "sSearch": {
+                    "type": "string",
+                    "example": "PriceFull",
+                    "description": "Name filter; empty = everything."
+                  },
+                  "mDataProp_1": {
+                    "type": "string",
+                    "example": "fname"
+                  },
+                  "cd": {
+                    "type": "string",
+                    "example": "/",
+                    "description": "Folder: `/` or `/<subfolder>`."
+                  },
+                  "csrftoken": {
+                    "type": "string",
+                    "description": "Token from the `/file` page."
+                  }
+                },
+                "required": [
+                  "sEcho",
+                  "iDisplayStart",
+                  "iDisplayLength",
+                  "sSearch",
+                  "mDataProp_1",
+                  "cd",
+                  "csrftoken"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "DataTables response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DirResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/file/d/{fileName}": {
+      "get": {
+        "summary": "Download a file from the root folder",
+        "security": [
+          {
+            "cftpSID": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "fileName",
+            "in": "path",
+            "required": true,
+            "description": "File name as returned by the listing.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "PriceFull7290058140886-001-001-20261111-001011.gz"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The price file (gzip-compressed XML).",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/file/d/{folder}/{fileName}": {
+      "get": {
+        "summary": "Download a file from a subfolder",
+        "security": [
+          {
+            "cftpSID": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "folder",
+            "in": "path",
+            "required": true,
+            "description": "Subfolder name.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fileName",
+            "in": "path",
+            "required": true,
+            "description": "File name as returned by the listing.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "PriceFull7290058140886-001-001-20261111-001011.gz"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The price file (gzip-compressed XML).",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DirResponse": {
+        "type": "object",
+        "properties": {
+          "aaData": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DirRow"
+            }
+          }
+        }
+      },
+      "DirRow": {
+        "type": "object",
+        "properties": {
+          "DT_RowId": {
+            "type": "string",
+            "example": "PriceFull7290058140886-001-001-20261111-001011.gz"
+          },
+          "fname": {
+            "type": "string",
+            "example": "PriceFull7290058140886-001-001-20261111-001011.gz"
+          },
+          "name": {
+            "type": "string",
+            "example": "PriceFull7290058140886-001-001-20261111-001011.gz"
+          },
+          "value": {
+            "type": "string",
+            "example": "PriceFull7290058140886-001-001-20261111-001011.gz"
+          },
+          "type": {
+            "type": "string",
+            "example": "file",
+            "enum": [
+              "file",
+              "folder"
+            ]
+          },
+          "typeLabel": {
+            "type": "string",
+            "example": "file"
+          },
+          "ftime": {
+            "type": "string",
+            "example": "11/11/2026 00:20"
+          },
+          "time": {
+            "type": "string",
+            "example": "2026-11-10T22:20:52Z",
+            "format": "date-time"
+          },
+          "size": {
+            "type": "integer",
+            "example": 1002771
+          },
+          "icon": {
+            "type": "string",
+            "example": "compress.png"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "cftpSID": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "cftpSID"
+      }
+    }
+  }
+}

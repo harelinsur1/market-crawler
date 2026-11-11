@@ -1,0 +1,76 @@
+{
+  "info": {
+    "name": "prices.shufersal.co.il",
+    "description": "Shufersal portal - paged HTML table (no date filter). Chains: Shufersal (7290027600007) - שופרסל.\n\nVery slow: a page can take ~2 minutes (in Postman set Settings > Request timeout = 0). The number of pages is in the `page=N` pager links. Links are short-lived signed (SAS) urls on Azure blob storage `https://pricesprodpublic.blob.core.windows.net/pricefull/`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// {{date}} = collection variable (YYYY-MM-DD) or today when empty.",
+          "const pad = n => String(n).padStart(2, '0');",
+          "const now = new Date();",
+          "const iso = pm.collectionVariables.get('date') || `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;",
+          "const [y, m, d] = iso.split('-');",
+          "pm.variables.set('date', iso);",
+          "pm.variables.set('dateCompact', y + m + d);",
+          "pm.variables.set('dateDmy', `${d}/${m}/${y}`);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "date",
+      "value": "",
+      "description": "YYYY-MM-DD; empty = today"
+    },
+    {
+      "key": "fileUrl",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "List PriceFull files",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "https://prices.shufersal.co.il/FileObject/UpdateCategory?catID=2&storeId=0&page=1"
+      },
+      "protocolProfileBehavior": {
+        "strictSSL": false
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const m = pm.response.text().match(/href=\"(https?:\\/\\/[^\"]+\\/(PriceFull[^\"\\/?]+)[^\"]*)\"/);",
+              "pm.test('found a PriceFull file', () => pm.expect(m).to.not.equal(null));",
+              "if (m) {",
+              "    pm.collectionVariables.set('fileUrl', m[1].replace(/&amp;/g, '&'));",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Download file",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{fileUrl}}",
+        "description": "Use \"Send and Download\" to save the file."
+      },
+      "protocolProfileBehavior": {
+        "strictSSL": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Hazi Hinam price portal",
+    "version": "1.0.0",
+    "description": "Hazi Hinam portal - paged HTML table. Chains: Hazi Hinam (7290700100008) - חצי חינם.\n\nLinks point to Azure blob storage (`https://hazihinamprod01.blob.core.windows.net/regulatories/`). The next page exists while the page has a `href=\"?p=N+1&...\"` link."
+  },
+  "servers": [
+    {
+      "url": "https://shop.hazi-hinam.co.il"
+    }
+  ],
+  "paths": {
+    "/Prices": {
+      "get": {
+        "summary": "Files table page",
+        "parameters": [
+          {
+            "name": "p",
+            "in": "query",
+            "required": true,
+            "description": "Page number (1-based).",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          },
+          {
+            "name": "s",
+            "in": "query",
+            "required": false,
+            "description": "Store filter; empty = all.",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "f",
+            "in": "query",
+            "required": false,
+            "description": "Free-text filter; empty = none.",
+            "schema": {
+              "type": "string"
+            },
+            "example": ""
+          },
+          {
+            "name": "t",
+            "in": "query",
+            "required": true,
+            "description": "File type; 1 = prices (Price and PriceFull).",
+            "schema": {
+              "type": "string"
+            },
+            "example": "1"
+          },
+          {
+            "name": "d",
+            "in": "query",
+            "required": true,
+            "description": "Publication day (YYYY-MM-DD).",
+            "schema": {
+              "type": "string"
+            },
+            "example": "2026-11-11"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Table with absolute download links.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/regulatories/{fileName}": {
+      "servers": [
+        {
+          "url": "https://hazihinamprod01.blob.core.windows.net",
+          "description": "Azure blob storage"
+        }
+      ],
+      "get": {
+        "summary": "Download a file",
+        "parameters": [
+          {
+            "name": "fileName",
+            "in": "path",
+            "required": true,
+            "description": "File name as returned by the listing.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "PriceFull7290700100008-000-219-20261111-151420.gz"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The price file (gzip-compressed XML).",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

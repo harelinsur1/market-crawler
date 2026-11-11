@@ -1,0 +1,85 @@
+{
+  "info": {
+    "name": "prices.carrefour.co.il",
+    "description": "Carrefour / Yeinot Bitan / Mega portal (by U-CODE). Chains: Carrefour (7290055700007) - קרפור.\n\nThe day page embeds `const path = 'YYYYMMDD';` and `const files = [{\"name\": ...}];`; files are downloaded from `/{path}/{fileName}`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// {{date}} = collection variable (YYYY-MM-DD) or today when empty.",
+          "const pad = n => String(n).padStart(2, '0');",
+          "const now = new Date();",
+          "const iso = pm.collectionVariables.get('date') || `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;",
+          "const [y, m, d] = iso.split('-');",
+          "pm.variables.set('date', iso);",
+          "pm.variables.set('dateCompact', y + m + d);",
+          "pm.variables.set('dateDmy', `${d}/${m}/${y}`);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "date",
+      "value": "",
+      "description": "YYYY-MM-DD; empty = today"
+    },
+    {
+      "key": "path",
+      "value": ""
+    },
+    {
+      "key": "fileName",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "List PriceFull files",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "https://prices.carrefour.co.il/?date={{dateCompact}}"
+      },
+      "protocolProfileBehavior": {
+        "strictSSL": false
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const html = pm.response.text();",
+              "const path = html.match(/const path = '(\\d{8})';/);",
+              "const files = html.match(/const files = (\\[[\\s\\S]*?\\]);/);",
+              "pm.test('found the file list', () => pm.expect(path && files).to.be.ok);",
+              "const item = files && JSON.parse(files[1]).find(f => f.name.startsWith('PriceFull'));",
+              "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+              "if (item) {",
+              "    pm.collectionVariables.set('path', path[1]);",
+              "    pm.collectionVariables.set('fileName', item.name);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Download file",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "https://prices.carrefour.co.il/{{path}}/{{fileName}}",
+        "description": "Use \"Send and Download\" to save the file."
+      },
+      "protocolProfileBehavior": {
+        "strictSSL": false
+      }
+    }
+  ]
+}

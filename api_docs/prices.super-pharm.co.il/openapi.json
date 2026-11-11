@@ -1,0 +1,104 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Super-Pharm price portal",
+    "version": "1.0.0",
+    "description": "Super-Pharm portal - paged MVC grid. Chains: Super-Pharm (7290172900007) - סופר-פארם.\n\nPages = ceil(`data-total-rows` / `mvc-grid-pager-rows` value)."
+  },
+  "servers": [
+    {
+      "url": "https://prices.super-pharm.co.il"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Files grid page",
+        "parameters": [
+          {
+            "name": "Category-equals",
+            "in": "query",
+            "required": true,
+            "description": "File category.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "PriceFull"
+          },
+          {
+            "name": "Date-equals",
+            "in": "query",
+            "required": true,
+            "description": "Publication day (DD/MM/YYYY).",
+            "schema": {
+              "type": "string"
+            },
+            "example": "11/11/2026"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "description": "Page number (1-based).",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Grid with `href=\"/Download/...\"` links.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Download/{fileName}": {
+      "get": {
+        "summary": "Download a file",
+        "parameters": [
+          {
+            "name": "fileName",
+            "in": "path",
+            "required": true,
+            "description": "File name as returned by the listing.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "PriceFull7290172900007-000-260-20261111-071626.gz"
+          },
+          {
+            "name": "bucketName",
+            "in": "query",
+            "required": true,
+            "description": "Storage bucket from the link.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "sp_transparency_output_prod_v2"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The price file (gzip-compressed XML).",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

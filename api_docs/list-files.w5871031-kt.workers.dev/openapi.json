@@ -1,0 +1,106 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "KT price feed",
+    "version": "1.0.0",
+    "description": "KT feed (Cloudflare worker) - one JSON list of every published file with a direct url (Backblaze B2 storage). Ignores dates. Chains: KT Mishnat Yosef (5144744100002) - קיי.טי. — משנת יוסף."
+  },
+  "servers": [
+    {
+      "url": "https://list-files.w5871031-kt.workers.dev"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "List all files",
+        "responses": {
+          "200": {
+            "description": "Every published file.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KTFile"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{fileName}": {
+      "servers": [
+        {
+          "url": "https://kt-prices.s3.eu-central-003.backblazeb2.com",
+          "description": "Backblaze B2 storage"
+        }
+      ],
+      "get": {
+        "summary": "Download a file (the item's `url`)",
+        "parameters": [
+          {
+            "name": "fileName",
+            "in": "path",
+            "required": true,
+            "description": "File name as returned by the listing.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "PriceFull5144744100002-001-001-20261111-000001.xml.gz"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The price file (gzip-compressed XML).",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "KTFile": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "PriceFull"
+          },
+          "name": {
+            "type": "string",
+            "example": "PriceFull5144744100002-001-001-20261111-000001.xml.gz"
+          },
+          "url": {
+            "type": "string",
+            "example": "https://kt-prices.s3.eu-central-003.backblazeb2.com/PriceFull5144744100002-001-001-20261111-000001.xml.gz",
+            "format": "uri"
+          },
+          "end_time": {
+            "type": "integer",
+            "format": "int64",
+            "example": 1802296802914
+          },
+          "snif": {
+            "type": "string",
+            "nullable": true
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-11-11 00:00:01"
+          }
+        }
+      }
+    }
+  }
+}

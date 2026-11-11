@@ -1,0 +1,145 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Shufersal price portal",
+    "version": "1.0.0",
+    "description": "Shufersal portal - paged HTML table (no date filter). Chains: Shufersal (7290027600007) - שופרסל.\n\nVery slow: a page can take ~2 minutes (in Postman set Settings > Request timeout = 0). The number of pages is in the `page=N` pager links. Links are short-lived signed (SAS) urls on Azure blob storage `https://pricesprodpublic.blob.core.windows.net/pricefull/`."
+  },
+  "servers": [
+    {
+      "url": "https://prices.shufersal.co.il"
+    }
+  ],
+  "paths": {
+    "/FileObject/UpdateCategory": {
+      "get": {
+        "summary": "Files table page",
+        "parameters": [
+          {
+            "name": "catID",
+            "in": "query",
+            "required": true,
+            "description": "Category; 2 = PriceFull.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "2"
+          },
+          {
+            "name": "storeId",
+            "in": "query",
+            "required": true,
+            "description": "Store; 0 = all.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "0"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": true,
+            "description": "Page number (1-based).",
+            "schema": {
+              "type": "integer"
+            },
+            "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Table with signed download links (`&amp;`-escaped).",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pricefull/{fileName}": {
+      "servers": [
+        {
+          "url": "https://pricesprodpublic.blob.core.windows.net",
+          "description": "Azure blob storage"
+        }
+      ],
+      "get": {
+        "summary": "Download a file (signed url from the table)",
+        "parameters": [
+          {
+            "name": "fileName",
+            "in": "path",
+            "required": true,
+            "description": "File name as returned by the listing.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "PriceFull7290027600007-001-001-20261111-032159.gz"
+          },
+          {
+            "name": "sv",
+            "in": "query",
+            "required": true,
+            "description": "SAS signature part, copied from the link.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sr",
+            "in": "query",
+            "required": true,
+            "description": "SAS signature part, copied from the link.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sig",
+            "in": "query",
+            "required": true,
+            "description": "SAS signature part, copied from the link.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "se",
+            "in": "query",
+            "required": true,
+            "description": "SAS signature part, copied from the link.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sp",
+            "in": "query",
+            "required": true,
+            "description": "SAS signature part, copied from the link.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The price file (gzip-compressed XML).",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

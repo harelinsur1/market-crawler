@@ -1,0 +1,214 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Bina Projects price portals",
+    "version": "1.0.0",
+    "description": "Bina Projects portals: every chain has its own subdomain `<key>.binaprojects.com` with the same API. Pick the chain in the server list.\n\nFlow: `POST /MainIO_Hok.aspx` (list a day's files) -> `GET /Download.aspx?FileNm=` (returns the real file url `SPath`) -> `GET /Download/{fileName}`.\n\n`citymarketkiryatgat` publishes both City Market Kiryat Gat chain ids (7290058266241 and 7290058288090)."
+  },
+  "servers": [
+    {
+      "url": "https://kingstore.binaprojects.com",
+      "description": "King Store (7290058108879) - קינג סטור"
+    },
+    {
+      "url": "https://maayan2000.binaprojects.com",
+      "description": "Maayan 2000 (7290058159628) - מעיין אלפיים"
+    },
+    {
+      "url": "https://goodpharm.binaprojects.com",
+      "description": "Good Pharm (7290058197699) - גוד פארם"
+    },
+    {
+      "url": "https://zolvebegadol.binaprojects.com",
+      "description": "Zol VeBegadol (7290058173198) - זול ובגדול"
+    },
+    {
+      "url": "https://supersapir.binaprojects.com",
+      "description": "Super Sapir (7290058156016) - סופר ספיר"
+    },
+    {
+      "url": "https://citymarketkiryatgat.binaprojects.com",
+      "description": "City Market Kiryat Gat (7290058266241) - סיטי מרקט קריית גת"
+    },
+    {
+      "url": "https://superbareket.binaprojects.com",
+      "description": "Of VeHodu Bareket (7290875100001) - עוף והודו ברקת"
+    },
+    {
+      "url": "https://ktshivuk.binaprojects.com",
+      "description": "KT Shivuk (7290058289400) - קיי.טי. יבוא ושיווק"
+    },
+    {
+      "url": "https://shuk-hayir.binaprojects.com",
+      "description": "Shuk HaIr (7290058148776) - שוק העיר"
+    },
+    {
+      "url": "https://shefabirkathashem.binaprojects.com",
+      "description": "Shefa Birkat Hashem (7290058134977) - שפע ברכת השם"
+    }
+  ],
+  "paths": {
+    "/MainIO_Hok.aspx": {
+      "post": {
+        "summary": "List the files published on a day",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "WStore": {
+                    "type": "string",
+                    "example": "",
+                    "description": "Store number; empty = all stores."
+                  },
+                  "WDate": {
+                    "type": "string",
+                    "example": "2026-11-11",
+                    "format": "date",
+                    "description": "Day (YYYY-MM-DD)."
+                  },
+                  "WFileType": {
+                    "type": "string",
+                    "example": "4",
+                    "description": "File type; 4 = PriceFull (used by the crawler)."
+                  }
+                },
+                "required": [
+                  "WStore",
+                  "WDate",
+                  "WFileType"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Files of the day (all types; the crawler keeps `FileNm` starting with `PriceFull`).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BinaFile"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Download.aspx": {
+      "get": {
+        "summary": "Resolve the download url of a file",
+        "parameters": [
+          {
+            "name": "FileNm",
+            "in": "query",
+            "required": true,
+            "description": "File name from the listing.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "PriceFull7290058108879-000-001-20261111-051139.GZ"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One item with the real file url.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "SPath": {
+                        "type": "string",
+                        "example": "https://kingstore.binaprojects.com/Download/PriceFull7290058108879-000-001-20261111-051139.GZ",
+                        "format": "uri"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Download/{fileName}": {
+      "get": {
+        "summary": "Download a file (the `SPath` url)",
+        "parameters": [
+          {
+            "name": "fileName",
+            "in": "path",
+            "required": true,
+            "description": "File name as returned by the listing.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "PriceFull7290058108879-000-001-20261111-051139.GZ"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The price file (gzip-compressed XML).",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BinaFile": {
+        "type": "object",
+        "properties": {
+          "FileNm": {
+            "type": "string",
+            "example": "PriceFull7290058108879-000-001-20261111-051139.GZ"
+          },
+          "Company": {
+            "type": "string",
+            "example": "1"
+          },
+          "Store": {
+            "type": "string",
+            "example": "1 Um al-Fahm"
+          },
+          "TypeFile": {
+            "type": "string",
+            "description": "File type label (Hebrew)."
+          },
+          "TypeExpFile": {
+            "type": "string",
+            "example": "gz"
+          },
+          "DateFile": {
+            "type": "string",
+            "example": "05:12 11/11/2026",
+            "description": "HH:MM DD/MM/YYYY"
+          },
+          "PathLogo": {
+            "type": "string"
+          },
+          "Reshet": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

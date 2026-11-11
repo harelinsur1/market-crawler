@@ -1,0 +1,922 @@
+{
+  "info": {
+    "name": "binaprojects.com",
+    "description": "Bina Projects portals: every chain has its own subdomain `<key>.binaprojects.com` with the same API. Pick the chain in the server list.\n\nFlow: `POST /MainIO_Hok.aspx` (list a day's files) -> `GET /Download.aspx?FileNm=` (returns the real file url `SPath`) -> `GET /Download/{fileName}`.\n\n`citymarketkiryatgat` publishes both City Market Kiryat Gat chain ids (7290058266241 and 7290058288090).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// {{date}} = collection variable (YYYY-MM-DD) or today when empty.",
+          "const pad = n => String(n).padStart(2, '0');",
+          "const now = new Date();",
+          "const iso = pm.collectionVariables.get('date') || `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;",
+          "const [y, m, d] = iso.split('-');",
+          "pm.variables.set('date', iso);",
+          "pm.variables.set('dateCompact', y + m + d);",
+          "pm.variables.set('dateDmy', `${d}/${m}/${y}`);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "date",
+      "value": "",
+      "description": "YYYY-MM-DD; empty = today"
+    },
+    {
+      "key": "fileName",
+      "value": ""
+    },
+    {
+      "key": "fileUrl",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "King Store (7290058108879)",
+      "item": [
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://kingstore.binaprojects.com/MainIO_Hok.aspx",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "WStore",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "WDate",
+                  "value": "{{date}}",
+                  "type": "text"
+                },
+                {
+                  "key": "WFileType",
+                  "value": "4",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json()).find(f => (f.FileNm || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('fileName', item.FileNm);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resolve download url",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://kingstore.binaprojects.com/Download.aspx?FileNm={{fileName}}"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const url = pm.response.json()[0].SPath;",
+                  "pm.test('got SPath', () => pm.expect(url).to.be.a('string'));",
+                  "pm.collectionVariables.set('fileUrl', url);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{fileUrl}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "King Store (7290058108879) - קינג סטור"
+    },
+    {
+      "name": "Maayan 2000 (7290058159628)",
+      "item": [
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://maayan2000.binaprojects.com/MainIO_Hok.aspx",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "WStore",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "WDate",
+                  "value": "{{date}}",
+                  "type": "text"
+                },
+                {
+                  "key": "WFileType",
+                  "value": "4",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json()).find(f => (f.FileNm || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('fileName', item.FileNm);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resolve download url",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://maayan2000.binaprojects.com/Download.aspx?FileNm={{fileName}}"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const url = pm.response.json()[0].SPath;",
+                  "pm.test('got SPath', () => pm.expect(url).to.be.a('string'));",
+                  "pm.collectionVariables.set('fileUrl', url);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{fileUrl}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Maayan 2000 (7290058159628) - מעיין אלפיים"
+    },
+    {
+      "name": "Good Pharm (7290058197699)",
+      "item": [
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://goodpharm.binaprojects.com/MainIO_Hok.aspx",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "WStore",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "WDate",
+                  "value": "{{date}}",
+                  "type": "text"
+                },
+                {
+                  "key": "WFileType",
+                  "value": "4",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json()).find(f => (f.FileNm || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('fileName', item.FileNm);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resolve download url",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://goodpharm.binaprojects.com/Download.aspx?FileNm={{fileName}}"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const url = pm.response.json()[0].SPath;",
+                  "pm.test('got SPath', () => pm.expect(url).to.be.a('string'));",
+                  "pm.collectionVariables.set('fileUrl', url);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{fileUrl}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Good Pharm (7290058197699) - גוד פארם"
+    },
+    {
+      "name": "Zol VeBegadol (7290058173198)",
+      "item": [
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://zolvebegadol.binaprojects.com/MainIO_Hok.aspx",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "WStore",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "WDate",
+                  "value": "{{date}}",
+                  "type": "text"
+                },
+                {
+                  "key": "WFileType",
+                  "value": "4",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json()).find(f => (f.FileNm || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('fileName', item.FileNm);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resolve download url",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://zolvebegadol.binaprojects.com/Download.aspx?FileNm={{fileName}}"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const url = pm.response.json()[0].SPath;",
+                  "pm.test('got SPath', () => pm.expect(url).to.be.a('string'));",
+                  "pm.collectionVariables.set('fileUrl', url);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{fileUrl}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Zol VeBegadol (7290058173198) - זול ובגדול"
+    },
+    {
+      "name": "Super Sapir (7290058156016)",
+      "item": [
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://supersapir.binaprojects.com/MainIO_Hok.aspx",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "WStore",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "WDate",
+                  "value": "{{date}}",
+                  "type": "text"
+                },
+                {
+                  "key": "WFileType",
+                  "value": "4",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json()).find(f => (f.FileNm || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('fileName', item.FileNm);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resolve download url",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://supersapir.binaprojects.com/Download.aspx?FileNm={{fileName}}"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const url = pm.response.json()[0].SPath;",
+                  "pm.test('got SPath', () => pm.expect(url).to.be.a('string'));",
+                  "pm.collectionVariables.set('fileUrl', url);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{fileUrl}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Super Sapir (7290058156016) - סופר ספיר"
+    },
+    {
+      "name": "City Market Kiryat Gat (7290058266241)",
+      "item": [
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://citymarketkiryatgat.binaprojects.com/MainIO_Hok.aspx",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "WStore",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "WDate",
+                  "value": "{{date}}",
+                  "type": "text"
+                },
+                {
+                  "key": "WFileType",
+                  "value": "4",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json()).find(f => (f.FileNm || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('fileName', item.FileNm);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resolve download url",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://citymarketkiryatgat.binaprojects.com/Download.aspx?FileNm={{fileName}}"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const url = pm.response.json()[0].SPath;",
+                  "pm.test('got SPath', () => pm.expect(url).to.be.a('string'));",
+                  "pm.collectionVariables.set('fileUrl', url);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{fileUrl}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "City Market Kiryat Gat (7290058266241) - סיטי מרקט קריית גת"
+    },
+    {
+      "name": "Of VeHodu Bareket (7290875100001)",
+      "item": [
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://superbareket.binaprojects.com/MainIO_Hok.aspx",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "WStore",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "WDate",
+                  "value": "{{date}}",
+                  "type": "text"
+                },
+                {
+                  "key": "WFileType",
+                  "value": "4",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json()).find(f => (f.FileNm || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('fileName', item.FileNm);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resolve download url",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://superbareket.binaprojects.com/Download.aspx?FileNm={{fileName}}"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const url = pm.response.json()[0].SPath;",
+                  "pm.test('got SPath', () => pm.expect(url).to.be.a('string'));",
+                  "pm.collectionVariables.set('fileUrl', url);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{fileUrl}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Of VeHodu Bareket (7290875100001) - עוף והודו ברקת"
+    },
+    {
+      "name": "KT Shivuk (7290058289400)",
+      "item": [
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://ktshivuk.binaprojects.com/MainIO_Hok.aspx",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "WStore",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "WDate",
+                  "value": "{{date}}",
+                  "type": "text"
+                },
+                {
+                  "key": "WFileType",
+                  "value": "4",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json()).find(f => (f.FileNm || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('fileName', item.FileNm);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resolve download url",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://ktshivuk.binaprojects.com/Download.aspx?FileNm={{fileName}}"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const url = pm.response.json()[0].SPath;",
+                  "pm.test('got SPath', () => pm.expect(url).to.be.a('string'));",
+                  "pm.collectionVariables.set('fileUrl', url);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{fileUrl}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "KT Shivuk (7290058289400) - קיי.טי. יבוא ושיווק"
+    },
+    {
+      "name": "Shuk HaIr (7290058148776)",
+      "item": [
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://shuk-hayir.binaprojects.com/MainIO_Hok.aspx",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "WStore",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "WDate",
+                  "value": "{{date}}",
+                  "type": "text"
+                },
+                {
+                  "key": "WFileType",
+                  "value": "4",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json()).find(f => (f.FileNm || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('fileName', item.FileNm);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resolve download url",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://shuk-hayir.binaprojects.com/Download.aspx?FileNm={{fileName}}"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const url = pm.response.json()[0].SPath;",
+                  "pm.test('got SPath', () => pm.expect(url).to.be.a('string'));",
+                  "pm.collectionVariables.set('fileUrl', url);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{fileUrl}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Shuk HaIr (7290058148776) - שוק העיר"
+    },
+    {
+      "name": "Shefa Birkat Hashem (7290058134977)",
+      "item": [
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://shefabirkathashem.binaprojects.com/MainIO_Hok.aspx",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "WStore",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "WDate",
+                  "value": "{{date}}",
+                  "type": "text"
+                },
+                {
+                  "key": "WFileType",
+                  "value": "4",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json()).find(f => (f.FileNm || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('fileName', item.FileNm);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resolve download url",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://shefabirkathashem.binaprojects.com/Download.aspx?FileNm={{fileName}}"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const url = pm.response.json()[0].SPath;",
+                  "pm.test('got SPath', () => pm.expect(url).to.be.a('string'));",
+                  "pm.collectionVariables.set('fileUrl', url);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{fileUrl}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Shefa Birkat Hashem (7290058134977) - שפע ברכת השם"
+    }
+  ]
+}

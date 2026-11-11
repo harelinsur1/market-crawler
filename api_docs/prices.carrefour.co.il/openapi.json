@@ -1,0 +1,84 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Carrefour price portal",
+    "version": "1.0.0",
+    "description": "Carrefour / Yeinot Bitan / Mega portal (by U-CODE). Chains: Carrefour (7290055700007) - קרפור.\n\nThe day page embeds `const path = 'YYYYMMDD';` and `const files = [{\"name\": ...}];`; files are downloaded from `/{path}/{fileName}`."
+  },
+  "servers": [
+    {
+      "url": "https://prices.carrefour.co.il"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Files page of a day",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "description": "Publication day (YYYYMMDD).",
+            "schema": {
+              "type": "string"
+            },
+            "example": "20261111"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML with the embedded `path` and `files` JS variables.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{path}/{fileName}": {
+      "get": {
+        "summary": "Download a file",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "description": "The page's `path` (YYYYMMDD).",
+            "schema": {
+              "type": "string"
+            },
+            "example": "20261111"
+          },
+          {
+            "name": "fileName",
+            "in": "path",
+            "required": true,
+            "description": "File name as returned by the listing.",
+            "schema": {
+              "type": "string"
+            },
+            "example": "PriceFull7290055700007-001-002-20261111-051004.gz"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The price file (gzip-compressed XML).",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

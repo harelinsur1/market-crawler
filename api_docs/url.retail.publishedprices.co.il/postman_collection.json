@@ -1,0 +1,2782 @@
+{
+  "info": {
+    "name": "url.retail.publishedprices.co.il",
+    "description": "Cerberus web client shared by many chains; each chain is a user account.\n\nFlow: `GET /login` (session cookie `cftpSID` + `csrftoken` meta tag) -> `POST /login/user` (redirects to `/file`, whose page has a new `csrftoken`) -> `POST /file/json/dir` (list files) -> `GET /file/d/{fileName}`.\nSome accounts (e.g. Super Yuda) keep their files in a subfolder.\n\n| chain | chain id | username | password |\n|---|---|---|---|\n| Dor Alon | 7290492000005 | `doralon` | `` |\n| Tiv Taam | 7290873255550 | `tivtaam` | `` |\n| Yohananof | 7290803800003 | `yohananof` | `` |\n| Osher Ad | 7290103152017 | `osherad` | `` |\n| Salach Dabach | 7290526500006 | `salachd` | `12345` |\n| Stop Market | 7290639000004 | `stop_market` | `` |\n| Politzer | 7291059100008 | `politzer` | `` |\n| Paz Yellow | 7290644700005 | `paz_bo` | `paz468` |\n| Super Yuda | 7290058177776 | `yuda_ho` | `Yud@147` |\n| Fresh Market | 7290876100000 | `freshmarket` | `` |\n| Keshet Teamim | 7290785400000 | `keshet` | `` |\n| Rami Levy | 7290058140886 | `ramilevi` | `` |",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// {{date}} = collection variable (YYYY-MM-DD) or today when empty.",
+          "const pad = n => String(n).padStart(2, '0');",
+          "const now = new Date();",
+          "const iso = pm.collectionVariables.get('date') || `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;",
+          "const [y, m, d] = iso.split('-');",
+          "pm.variables.set('date', iso);",
+          "pm.variables.set('dateCompact', y + m + d);",
+          "pm.variables.set('dateDmy', `${d}/${m}/${y}`);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "date",
+      "value": "",
+      "description": "YYYY-MM-DD; empty = today"
+    },
+    {
+      "key": "csrftoken",
+      "value": ""
+    },
+    {
+      "key": "folder",
+      "value": ""
+    },
+    {
+      "key": "filePath",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Dor Alon (7290492000005)",
+      "item": [
+        {
+          "name": "Login page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login/user",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "doralon",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Submit",
+                  "value": "Sign in",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('logged in', () => pm.expect(pm.response.text()).to.not.include('name=\"username\"'));",
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List root folder",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "description": "Picks the root, or the first subfolder when the root has no PriceFull files.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const rows = pm.response.json().aaData || [];",
+                  "const inRoot = rows.some(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "const sub = rows.find(r => r.type === 'folder');",
+                  "pm.collectionVariables.set('folder', !inRoot && sub ? sub.fname : '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "PriceFull",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/{{folder}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json().aaData || []).find(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('filePath', (pm.collectionVariables.get('folder') ? pm.collectionVariables.get('folder') + '/' : '') + item.fname);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/d/{{filePath}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Dor Alon (7290492000005) - דור אלון"
+    },
+    {
+      "name": "Tiv Taam (7290873255550)",
+      "item": [
+        {
+          "name": "Login page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login/user",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "tivtaam",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Submit",
+                  "value": "Sign in",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('logged in', () => pm.expect(pm.response.text()).to.not.include('name=\"username\"'));",
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List root folder",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "description": "Picks the root, or the first subfolder when the root has no PriceFull files.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const rows = pm.response.json().aaData || [];",
+                  "const inRoot = rows.some(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "const sub = rows.find(r => r.type === 'folder');",
+                  "pm.collectionVariables.set('folder', !inRoot && sub ? sub.fname : '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "PriceFull",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/{{folder}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json().aaData || []).find(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('filePath', (pm.collectionVariables.get('folder') ? pm.collectionVariables.get('folder') + '/' : '') + item.fname);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/d/{{filePath}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Tiv Taam (7290873255550) - טיב טעם"
+    },
+    {
+      "name": "Yohananof (7290803800003)",
+      "item": [
+        {
+          "name": "Login page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login/user",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "yohananof",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Submit",
+                  "value": "Sign in",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('logged in', () => pm.expect(pm.response.text()).to.not.include('name=\"username\"'));",
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List root folder",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "description": "Picks the root, or the first subfolder when the root has no PriceFull files.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const rows = pm.response.json().aaData || [];",
+                  "const inRoot = rows.some(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "const sub = rows.find(r => r.type === 'folder');",
+                  "pm.collectionVariables.set('folder', !inRoot && sub ? sub.fname : '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "PriceFull",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/{{folder}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json().aaData || []).find(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('filePath', (pm.collectionVariables.get('folder') ? pm.collectionVariables.get('folder') + '/' : '') + item.fname);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/d/{{filePath}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Yohananof (7290803800003) - יוחננוף"
+    },
+    {
+      "name": "Osher Ad (7290103152017)",
+      "item": [
+        {
+          "name": "Login page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login/user",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "osherad",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Submit",
+                  "value": "Sign in",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('logged in', () => pm.expect(pm.response.text()).to.not.include('name=\"username\"'));",
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List root folder",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "description": "Picks the root, or the first subfolder when the root has no PriceFull files.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const rows = pm.response.json().aaData || [];",
+                  "const inRoot = rows.some(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "const sub = rows.find(r => r.type === 'folder');",
+                  "pm.collectionVariables.set('folder', !inRoot && sub ? sub.fname : '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "PriceFull",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/{{folder}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json().aaData || []).find(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('filePath', (pm.collectionVariables.get('folder') ? pm.collectionVariables.get('folder') + '/' : '') + item.fname);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/d/{{filePath}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Osher Ad (7290103152017) - אושר עד"
+    },
+    {
+      "name": "Salach Dabach (7290526500006)",
+      "item": [
+        {
+          "name": "Login page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login/user",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "salachd",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "12345",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Submit",
+                  "value": "Sign in",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('logged in', () => pm.expect(pm.response.text()).to.not.include('name=\"username\"'));",
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List root folder",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "description": "Picks the root, or the first subfolder when the root has no PriceFull files.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const rows = pm.response.json().aaData || [];",
+                  "const inRoot = rows.some(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "const sub = rows.find(r => r.type === 'folder');",
+                  "pm.collectionVariables.set('folder', !inRoot && sub ? sub.fname : '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "PriceFull",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/{{folder}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json().aaData || []).find(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('filePath', (pm.collectionVariables.get('folder') ? pm.collectionVariables.get('folder') + '/' : '') + item.fname);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/d/{{filePath}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Salach Dabach (7290526500006) - סאלח דבאח"
+    },
+    {
+      "name": "Stop Market (7290639000004)",
+      "item": [
+        {
+          "name": "Login page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login/user",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "stop_market",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Submit",
+                  "value": "Sign in",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('logged in', () => pm.expect(pm.response.text()).to.not.include('name=\"username\"'));",
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List root folder",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "description": "Picks the root, or the first subfolder when the root has no PriceFull files.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const rows = pm.response.json().aaData || [];",
+                  "const inRoot = rows.some(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "const sub = rows.find(r => r.type === 'folder');",
+                  "pm.collectionVariables.set('folder', !inRoot && sub ? sub.fname : '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "PriceFull",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/{{folder}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json().aaData || []).find(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('filePath', (pm.collectionVariables.get('folder') ? pm.collectionVariables.get('folder') + '/' : '') + item.fname);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/d/{{filePath}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Stop Market (7290639000004) - סטופ מרקט"
+    },
+    {
+      "name": "Politzer (7291059100008)",
+      "item": [
+        {
+          "name": "Login page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login/user",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "politzer",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Submit",
+                  "value": "Sign in",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('logged in', () => pm.expect(pm.response.text()).to.not.include('name=\"username\"'));",
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List root folder",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "description": "Picks the root, or the first subfolder when the root has no PriceFull files.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const rows = pm.response.json().aaData || [];",
+                  "const inRoot = rows.some(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "const sub = rows.find(r => r.type === 'folder');",
+                  "pm.collectionVariables.set('folder', !inRoot && sub ? sub.fname : '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "PriceFull",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/{{folder}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json().aaData || []).find(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('filePath', (pm.collectionVariables.get('folder') ? pm.collectionVariables.get('folder') + '/' : '') + item.fname);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/d/{{filePath}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Politzer (7291059100008) - פוליצר"
+    },
+    {
+      "name": "Paz Yellow (7290644700005)",
+      "item": [
+        {
+          "name": "Login page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login/user",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "paz_bo",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "paz468",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Submit",
+                  "value": "Sign in",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('logged in', () => pm.expect(pm.response.text()).to.not.include('name=\"username\"'));",
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List root folder",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "description": "Picks the root, or the first subfolder when the root has no PriceFull files.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const rows = pm.response.json().aaData || [];",
+                  "const inRoot = rows.some(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "const sub = rows.find(r => r.type === 'folder');",
+                  "pm.collectionVariables.set('folder', !inRoot && sub ? sub.fname : '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "PriceFull",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/{{folder}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json().aaData || []).find(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('filePath', (pm.collectionVariables.get('folder') ? pm.collectionVariables.get('folder') + '/' : '') + item.fname);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/d/{{filePath}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Paz Yellow (7290644700005) - פז — יילו"
+    },
+    {
+      "name": "Super Yuda (7290058177776)",
+      "item": [
+        {
+          "name": "Login page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login/user",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "yuda_ho",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "Yud@147",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Submit",
+                  "value": "Sign in",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('logged in', () => pm.expect(pm.response.text()).to.not.include('name=\"username\"'));",
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List root folder",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "description": "Picks the root, or the first subfolder when the root has no PriceFull files.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const rows = pm.response.json().aaData || [];",
+                  "const inRoot = rows.some(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "const sub = rows.find(r => r.type === 'folder');",
+                  "pm.collectionVariables.set('folder', !inRoot && sub ? sub.fname : '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "PriceFull",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/{{folder}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json().aaData || []).find(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('filePath', (pm.collectionVariables.get('folder') ? pm.collectionVariables.get('folder') + '/' : '') + item.fname);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/d/{{filePath}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Super Yuda (7290058177776) - פז — סופר יודה"
+    },
+    {
+      "name": "Fresh Market (7290876100000)",
+      "item": [
+        {
+          "name": "Login page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login/user",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "freshmarket",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Submit",
+                  "value": "Sign in",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('logged in', () => pm.expect(pm.response.text()).to.not.include('name=\"username\"'));",
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List root folder",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "description": "Picks the root, or the first subfolder when the root has no PriceFull files.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const rows = pm.response.json().aaData || [];",
+                  "const inRoot = rows.some(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "const sub = rows.find(r => r.type === 'folder');",
+                  "pm.collectionVariables.set('folder', !inRoot && sub ? sub.fname : '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "PriceFull",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/{{folder}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json().aaData || []).find(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('filePath', (pm.collectionVariables.get('folder') ? pm.collectionVariables.get('folder') + '/' : '') + item.fname);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/d/{{filePath}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Fresh Market (7290876100000) - פז — פרשמרקט"
+    },
+    {
+      "name": "Keshet Teamim (7290785400000)",
+      "item": [
+        {
+          "name": "Login page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login/user",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "keshet",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Submit",
+                  "value": "Sign in",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('logged in', () => pm.expect(pm.response.text()).to.not.include('name=\"username\"'));",
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List root folder",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "description": "Picks the root, or the first subfolder when the root has no PriceFull files.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const rows = pm.response.json().aaData || [];",
+                  "const inRoot = rows.some(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "const sub = rows.find(r => r.type === 'folder');",
+                  "pm.collectionVariables.set('folder', !inRoot && sub ? sub.fname : '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "PriceFull",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/{{folder}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json().aaData || []).find(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('filePath', (pm.collectionVariables.get('folder') ? pm.collectionVariables.get('folder') + '/' : '') + item.fname);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/d/{{filePath}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Keshet Teamim (7290785400000) - קשת טעמים"
+    },
+    {
+      "name": "Rami Levy (7290058140886)",
+      "item": [
+        {
+          "name": "Login page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login"
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/login/user",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "ramilevi",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "Submit",
+                  "value": "Sign in",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('logged in', () => pm.expect(pm.response.text()).to.not.include('name=\"username\"'));",
+                  "const m = pm.response.text().match(/name=\"csrftoken\" content=\"([^\"]+)\"/);",
+                  "pm.test('found the csrftoken', () => pm.expect(m).to.not.equal(null));",
+                  "if (m) {",
+                  "    pm.collectionVariables.set('csrftoken', m[1]);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List root folder",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "description": "Picks the root, or the first subfolder when the root has no PriceFull files.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const rows = pm.response.json().aaData || [];",
+                  "const inRoot = rows.some(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "const sub = rows.find(r => r.type === 'folder');",
+                  "pm.collectionVariables.set('folder', !inRoot && sub ? sub.fname : '');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List PriceFull files",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/json/dir",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "sEcho",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayStart",
+                  "value": "0",
+                  "type": "text"
+                },
+                {
+                  "key": "iDisplayLength",
+                  "value": "100000",
+                  "type": "text"
+                },
+                {
+                  "key": "mDataProp_1",
+                  "value": "fname",
+                  "type": "text"
+                },
+                {
+                  "key": "csrftoken",
+                  "value": "{{csrftoken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "sSearch",
+                  "value": "PriceFull",
+                  "type": "text"
+                },
+                {
+                  "key": "cd",
+                  "value": "/{{folder}}",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const item = (pm.response.json().aaData || []).find(r => r.type === 'file' && (r.fname || '').startsWith('PriceFull'));",
+                  "pm.test('found a PriceFull file', () => pm.expect(item).to.not.equal(undefined));",
+                  "if (item) {",
+                  "    pm.collectionVariables.set('filePath', (pm.collectionVariables.get('folder') ? pm.collectionVariables.get('folder') + '/' : '') + item.fname);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Download file",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "https://url.retail.publishedprices.co.il/file/d/{{filePath}}",
+            "description": "Use \"Send and Download\" to save the file."
+          },
+          "protocolProfileBehavior": {
+            "strictSSL": false
+          }
+        }
+      ],
+      "description": "Rami Levy (7290058140886) - רמי לוי"
+    }
+  ]
+}
