@@ -1,4 +1,4 @@
-"""Combine all PriceFull XML files of one crawler run into one CSV."""
+"""Convert the PriceFull XML files of one crawler run into CSV rows."""
 import csv
 import os
 import re

@@ -57,9 +57,10 @@ stores selected and files downloaded (failed).
 The exit code is `0` on success and `1` if any chain or download failed. A failing portal
 (e.g. Shufersal timing out) is logged and does not stop the other chains.
 
-## Combine XML files into one CSV (`xml_to_csv`)
+## Convert XML files to CSV per chain (`xml_to_csv`)
 
-Merges every extracted PriceFull XML file of a run into one CSV with the columns of the final
+Converts every extracted PriceFull XML file of a run into one CSV per chain folder,
+`data\<run>\<chain folder>\full_prices_<run>.csv`, with the columns of the final
 price table:
 `priceupdatedate, itemcode, itemtype, itemname, manufacturername, manufacturecountry,
 manufactureritemdescription, unitqty, quantity, bisweighted, unitofmeasure, qtyinpackage,
@@ -76,7 +77,6 @@ python -m xml_to_csv.inspect_schema         # report the tag names used by each 
 |---------|-------------|
 | `python -m xml_to_csv 20261110-1100` | run folder under `--data` (default: the latest one) |
 | `python -m xml_to_csv --data D:\prices` | data root (default `data`) |
-| `python -m xml_to_csv --out D:\prices.csv` | output CSV (default `data\<run>\prices_<run>.csv`) |
 | `python -m xml_to_csv --workers 4` | parallel parser processes (default: number of CPUs) |
 | `python -m xml_to_csv.inspect_schema --sample 0` | inspect all files instead of 5 per chain |
 
@@ -91,20 +91,21 @@ one line) and
 name without extension, `chain` is the English chain name from `file_list.csv`. Item tags that are
 not mapped are listed at the end of the run so new variants can be added to the dictionary.
 
-## Load the CSV into SQL Server as SCD type 2 (`csv_to_sql`)
+## Load the CSVs into SQL Server as SCD type 2 (`csv_to_sql`)
 
-Loads `full_prices_<run>.csv` into `[cpi].[dbo].[foodChainPricesScd]` on `PCH80041449\MSSQLSERVER01`
+Loads the chain CSVs `data\<run>\<chain folder>\full_prices_<run>.csv` one chain at a time into
+`[cpi].[dbo].[foodChainPricesScd]` on `PCH80041449\MSSQLSERVER01`
 (Windows authentication, `ODBC Driver 17 for SQL Server`). Only changes are written, so the table
 holds the full price history without storing every item of every day.
 
 ```powershell
-python -m csv_to_sql                        # latest data\<run>\full_prices_<run>.csv
+python -m csv_to_sql                        # latest data\<run>\<chain folder>\full_prices_<run>.csv
 python -m csv_to_sql 20261110-1100          # a specific run folder (or a CSV path)
 ```
 
 | command | explanation |
 |---------|-------------|
-| `python -m csv_to_sql D:\prices.csv` | a CSV path instead of a run folder |
+| `python -m csv_to_sql D:\prices.csv` | a single CSV path instead of a run folder |
 | `python -m csv_to_sql --data D:\prices` | data root used to find the run folder (default `data`) |
 | `python -m csv_to_sql --server localhost\SQLEXPRESS` | SQL Server (default `PCH80041449\MSSQLSERVER01`) |
 | `python -m csv_to_sql --database cpi` | database (default `cpi`) |
@@ -113,16 +114,18 @@ python -m csv_to_sql 20261110-1100          # a specific run folder (or a CSV pa
 | `python -m csv_to_sql --driver "ODBC Driver 18 for SQL Server"` | ODBC driver (default `ODBC Driver 17 for SQL Server`) |
 | `python -m csv_to_sql --method odbc` | stream rows from this machine with `fast_executemany` instead of `BULK INSERT` (default `bulk`; use `odbc` if SQL Server cannot read the file) |
 | `python -m csv_to_sql --method odbc --batch-size 50000` | rows per batch for `--method odbc` (default 100000) |
-| `python -m csv_to_sql --keep-staging` | keep the `<table>_upload` staging table for debugging (default: dropped at the end) |
+| `python -m csv_to_sql --keep-staging` | keep the `<table>_upload` staging table of the last chain for debugging (default: dropped after every chain) |
 
 With no options the target is `[cpi].[dbo].[foodChainPricesScd]` on `PCH80041449\MSSQLSERVER01`;
 the table and its indexes are created on the first run.
 
-How it stays fast with a multi-GB CSV:
-1. `BULK INSERT` (server-side, minimally logged) into the staging table `foodChainPricesScd_upload`.
+How it stays fast and light with millions of rows — for each chain (folders with the same chain id,
+e.g. `7290055700007_Carrefour` and `7290055700007_Keshet-Teamim`, are loaded together):
+1. `BULK INSERT` (server-side, minimally logged) of the chain's CSV into the staging table `foodChainPricesScd_upload`.
 2. The staging table is clustered by `filename`; file names are parsed once per file into
    `chainid, subchainid, storeid` (the business key with `itemcode`).
-3. Merge one chain per transaction: every row has a SHA-256 `rowhash` of the tracked columns, compared
+3. Merge in one transaction per chain id, then drop the staging table before the next chain.
+   Every row has a SHA-256 `rowhash` of the tracked columns, compared
    with the current version through a filtered index (`iscurrent = 1`), so unchanged rows are never written.
    - hash differs: the current version is closed (`validto`, `iscurrent = 0`, `isdeleted = 0`) and a new version inserted
    - item no longer published by a store that is in the load: closed with `isdeleted = 1`
