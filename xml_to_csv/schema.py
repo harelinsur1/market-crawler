@@ -12,50 +12,60 @@ Chains do not use the same tag names. Observed variants (data/20261110-1100):
 Older files also used ItemNm, UnitMeasure, itemStatus (from the notebook's rename dict).
 Matching is case-insensitive.
 """
+import re
 
 COLUMNS = [
-    "PriceUpdateDate", "ItemCode", "ItemType", "ItemName",
-    "ManufacturerName", "ManufactureCountry", "ManufacturerItemDescription",
-    "UnitQty", "Quantity", "bIsWeighted", "UnitOfMeasure", "QtyInPackage",
-    "ItemPrice", "UnitOfMeasurePrice", "AllowDiscount", "ItemStatus",
+    "priceupdatedate", "itemcode", "itemtype", "itemname",
+    "manufacturername", "manufacturecountry", "manufactureritemdescription",
+    "unitqty", "quantity", "bisweighted", "unitofmeasure", "qtyinpackage",
+    "itemprice", "unitofmeasureprice", "allowdiscount", "itemstatus",
     "filename", "chain", "DateInserted",
 ]
 
 # target column -> source tags, in priority order (the first non-empty one wins)
 ALIASES = {
-    "PriceUpdateDate": ["PriceUpdateDate", "PriceUpdateTime"],
-    "ItemCode": ["ItemCode"],
-    "ItemType": ["ItemType"],
-    "ItemName": ["ItemName", "ItemNm"],
-    "ManufacturerName": ["ManufacturerName", "ManufactureName"],
-    "ManufactureCountry": ["ManufactureCountry"],
-    "ManufacturerItemDescription": ["ManufacturerItemDescription", "ManufactureItemDescription"],
-    "UnitQty": ["UnitQty"],
-    "Quantity": ["Quantity"],
-    "bIsWeighted": ["bIsWeighted", "BisWeighted", "blsWeighted"],
-    "UnitOfMeasure": ["UnitOfMeasure", "UnitMeasure"],
-    "QtyInPackage": ["QtyInPackage"],
-    "ItemPrice": ["ItemPrice"],
-    "UnitOfMeasurePrice": ["UnitOfMeasurePrice"],
-    "AllowDiscount": ["AllowDiscount"],
-    "ItemStatus": ["ItemStatus"],
+    "priceupdatedate": ["PriceUpdateDate", "PriceUpdateTime"],
+    "itemcode": ["ItemCode"],
+    "itemtype": ["ItemType"],
+    "itemname": ["ItemName", "ItemNm"],
+    "manufacturername": ["ManufacturerName", "ManufactureName"],
+    "manufacturecountry": ["ManufactureCountry"],
+    "manufactureritemdescription": ["ManufacturerItemDescription", "ManufactureItemDescription"],
+    "unitqty": ["UnitQty"],
+    "quantity": ["Quantity"],
+    "bisweighted": ["bIsWeighted", "BisWeighted", "blsWeighted"],
+    "unitofmeasure": ["UnitOfMeasure", "UnitMeasure"],
+    "qtyinpackage": ["QtyInPackage"],
+    "itemprice": ["ItemPrice"],
+    "unitofmeasureprice": ["UnitOfMeasurePrice"],
+    "allowdiscount": ["AllowDiscount"],
+    "itemstatus": ["ItemStatus"],
 }
 
 # item tags that exist in the files but are not part of the target schema
 IGNORED = {"lastsaledatetime", "lastupdatedate", "lastupdatetime", "itemid"}
 
-# column -> max length (SQL column sizes)
+# column -> max length (SQL varchar sizes). filename (varchar(50)) is not cut here because
+# csv_to_sql parses chain / store / timestamp from the full name.
 MAX_LENGTH = {
-    "ManufacturerName": 50,
-    "ManufactureCountry": 25,
-    "ManufacturerItemDescription": 125,
+    "itemname": 125,
+    "manufacturername": 50,
+    "manufacturecountry": 25,
+    "manufactureritemdescription": 125,
+    "unitqty": 25,
+    "unitofmeasure": 25,
+    "qtyinpackage": 25,
+    "chain": 25,
 }
 
 # columns where this value means "missing"
 UNKNOWN = "לא ידוע"
-UNKNOWN_TO_EMPTY = {"Quantity", "UnitOfMeasurePrice"}
+UNKNOWN_TO_EMPTY = {"quantity", "unitofmeasureprice"}
 
 KNOWN_TAGS = {alias.lower() for aliases in ALIASES.values() for alias in aliases} | IGNORED
+
+# line breaks inside a value (and the spaces around them) become one space: one record = one line
+_LINE_BREAK = re.compile(r"\s*[\r\n]+\s*")
 
 
 def convert_item(item, filename, chain, date_inserted):
@@ -71,9 +81,10 @@ def convert_item(item, filename, chain, date_inserted):
             value = date_inserted
         else:
             value = next((lower[a.lower()] for a in ALIASES[column] if lower.get(a.lower())), "")
+            value = _LINE_BREAK.sub(" ", value)
             if column in UNKNOWN_TO_EMPTY and value == UNKNOWN:
                 value = ""
-            if column in MAX_LENGTH:
-                value = value[:MAX_LENGTH[column]]
+        if column in MAX_LENGTH:
+            value = value[:MAX_LENGTH[column]]
         row.append(value)
     return row

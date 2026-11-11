@@ -59,11 +59,12 @@ The exit code is `0` on success and `1` if any chain or download failed. A faili
 
 ## Combine XML files into one CSV (`xml_to_csv`)
 
-Merges every extracted PriceFull XML file of a run into one CSV with the columns of the
-`[cpi].[dbo].[foodChainPrices]` table:
-`PriceUpdateDate, ItemCode, ItemType, ItemName, ManufacturerName, ManufactureCountry,
-ManufacturerItemDescription, UnitQty, Quantity, bIsWeighted, UnitOfMeasure, QtyInPackage,
-ItemPrice, UnitOfMeasurePrice, AllowDiscount, ItemStatus, filename, chain, DateInserted`.
+Merges every extracted PriceFull XML file of a run into one CSV with the columns of the final
+price table:
+`priceupdatedate, itemcode, itemtype, itemname, manufacturername, manufacturecountry,
+manufactureritemdescription, unitqty, quantity, bisweighted, unitofmeasure, qtyinpackage,
+itemprice, unitofmeasureprice, allowdiscount, itemstatus, filename, chain, DateInserted`.
+`DateInserted` is the time of the `xml_to_csv` run, formatted `2018-10-26 05:42:00`.
 
 ```powershell
 python -m xml_to_csv                        # latest data\<yyyymmdd-HHMM> folder
@@ -82,11 +83,62 @@ python -m xml_to_csv.inspect_schema         # report the tag names used by each 
 Chains do not use the same tag names (e.g. `PriceUpdateDate` / `PriceUpdateTime`,
 `ManufacturerName` / `ManufactureName`, `bIsWeighted` / `BisWeighted` / `blsWeighted`).
 The conversion dictionary is `ALIASES` in [xml_to_csv/schema.py](xml_to_csv/schema.py)
-(case-insensitive, first non-empty tag wins). As in the original notebook, `ManufacturerName`,
-`ManufactureCountry` and `ManufacturerItemDescription` are cut to 50 / 25 / 125 characters and
-`לא ידוע` in `Quantity` / `UnitOfMeasurePrice` becomes empty. `filename` is the downloaded file
+(case-insensitive, first non-empty tag wins). Text is cut to the SQL varchar sizes (`itemname` /
+`manufactureritemdescription` 125, `manufacturername` 50, `manufacturecountry`, `unitqty`,
+`unitofmeasure`, `qtyinpackage`, `chain` 25), line breaks inside a value become a space (one record =
+one line) and
+`לא ידוע` in `quantity` / `unitofmeasureprice` becomes empty. `filename` is the downloaded file
 name without extension, `chain` is the English chain name from `file_list.csv`. Item tags that are
 not mapped are listed at the end of the run so new variants can be added to the dictionary.
+
+## Load the CSV into SQL Server as SCD type 2 (`csv_to_sql`)
+
+Loads `full_prices_<run>.csv` into `[cpi].[dbo].[foodChainPricesScd]` on `PCH80041449\MSSQLSERVER01`
+(Windows authentication, `ODBC Driver 17 for SQL Server`). Only changes are written, so the table
+holds the full price history without storing every item of every day.
+
+```powershell
+python -m csv_to_sql                        # latest data\<run>\full_prices_<run>.csv
+python -m csv_to_sql 20261110-1100          # a specific run folder (or a CSV path)
+```
+
+| command | explanation |
+|---------|-------------|
+| `python -m csv_to_sql D:\prices.csv` | a CSV path instead of a run folder |
+| `python -m csv_to_sql --data D:\prices` | data root used to find the run folder (default `data`) |
+| `python -m csv_to_sql --server localhost\SQLEXPRESS` | SQL Server (default `PCH80041449\MSSQLSERVER01`) |
+| `python -m csv_to_sql --database cpi` | database (default `cpi`) |
+| `python -m csv_to_sql --schema dbo` | schema (default `dbo`) |
+| `python -m csv_to_sql --table myPrices` | SCD table (default `foodChainPricesScd`; staging table is `<table>_upload`, e.g. `foodChainPricesScd_upload`) |
+| `python -m csv_to_sql --driver "ODBC Driver 18 for SQL Server"` | ODBC driver (default `ODBC Driver 17 for SQL Server`) |
+| `python -m csv_to_sql --method odbc` | stream rows from this machine with `fast_executemany` instead of `BULK INSERT` (default `bulk`; use `odbc` if SQL Server cannot read the file) |
+| `python -m csv_to_sql --method odbc --batch-size 50000` | rows per batch for `--method odbc` (default 100000) |
+| `python -m csv_to_sql --keep-staging` | keep the `<table>_upload` staging table for debugging (default: dropped at the end) |
+
+With no options the target is `[cpi].[dbo].[foodChainPricesScd]` on `PCH80041449\MSSQLSERVER01`;
+the table and its indexes are created on the first run.
+
+How it stays fast with a multi-GB CSV:
+1. `BULK INSERT` (server-side, minimally logged) into the staging table `foodChainPricesScd_upload`.
+2. The staging table is clustered by `filename`; file names are parsed once per file into
+   `chainid, subchainid, storeid` (the business key with `itemcode`).
+3. Merge one chain per transaction: every row has a SHA-256 `rowhash` of the tracked columns, compared
+   with the current version through a filtered index (`iscurrent = 1`), so unchanged rows are never written.
+   - hash differs: the current version is closed (`validto`, `iscurrent = 0`, `isdeleted = 0`) and a new version inserted
+   - item no longer published by a store that is in the load: closed with `isdeleted = 1`
+   - store missing from the load (failed download): left untouched
+
+`validfrom` is the CSV's `DateInserted` (also stored per version in the `DateInserted date` column).
+Changes in `priceupdatedate`, `filename` or `chain` alone do not
+create a new version (see `TRACKED` in [csv_to_sql/scd.py](csv_to_sql/scd.py)). Duplicate items per store
+keep the row of the latest file; non-numeric item codes are skipped (`itemcode` is `bigint`, as in
+`foodChainPrices`). Re-running the same CSV changes nothing, so a failed run can be restarted;
+loading a CSV older than the last load is refused.
+
+Current prices: `SELECT * FROM cpi.dbo.foodChainPricesScd WHERE iscurrent = 1`.
+Prices on a date: `WHERE validfrom <= @d AND (validto > @d OR validto IS NULL)`.
+Removed items: `WHERE isdeleted = 1` (`validto` = when the item disappeared). If the item comes back
+later it gets a new version with `iscurrent = 1`.
 
 ## Chains
 
